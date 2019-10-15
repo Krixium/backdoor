@@ -1,6 +1,9 @@
 */output.txt
 */alice.txt
 
+# Ignore VS Code workspaces
+*.code-workspace
+
 # C++ objects and libs
 *.slo
 *.lo
@@ -19,6 +22,7 @@ CMakeScripts/
 Testing
 Makefile
 *.cmake
+!FindPCAP.cmake
 install_manifest.txt
 compile_commands.json
 
