@@ -6,7 +6,7 @@
         {
             "label": "Run executable",
             "type": "shell",
-            "command": "./build/backdoor",
+            "command": "sudo ./build/backdoor",
             "group": {
                 "kind": "build",
                 "isDefault": true
