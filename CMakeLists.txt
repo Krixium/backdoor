@@ -6,7 +6,7 @@ enable_testing()
 
 include(FindPCAP.cmake)
 
-add_executable(backdoor main.c)
+add_executable(backdoor main.c mask.c)
 target_link_libraries(backdoor ${PCAP_LIBRARY})
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
