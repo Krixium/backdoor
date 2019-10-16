@@ -6,8 +6,11 @@ enable_testing()
 
 include(FindPCAP.cmake)
 
-add_executable(backdoor main.c mask.c)
+find_package(OpenSSL REQUIRED)
+
+add_executable(backdoor main.c mask.c crypto.c)
 target_link_libraries(backdoor ${PCAP_LIBRARY})
+target_link_libraries(backdoor OpenSSL::SSL)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
