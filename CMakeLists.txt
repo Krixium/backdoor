@@ -8,7 +8,7 @@ include(FindPCAP.cmake)
 
 find_package(OpenSSL REQUIRED)
 
-add_executable(backdoor main.c mask.c crypto.c)
+add_executable(backdoor main.c mask.c crypto.c packet_handler.c)
 target_link_libraries(backdoor ${PCAP_LIBRARY})
 target_link_libraries(backdoor OpenSSL::SSL)
 
