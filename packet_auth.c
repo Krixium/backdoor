@@ -54,17 +54,7 @@ unsigned int hex_to_uint(char *hex)
  */
 int is_seq_num_auth(const unsigned short source_port, const unsigned int sequence_num)
 {
-    char src_port_str[6];
-    char calculated_hash_buf[32];
-
-    unsigned int calculated_seq_num;
-
-    sprintf(src_port_str, "%d", source_port);
-    sha256_hash(src_port_str, strlen(src_port_str), calculated_hash_buf);
-
-    calculated_seq_num = hex_to_uint(calculated_hash_buf);
-
-    if (sequence_num != calculated_seq_num)
+    if (sequence_num != gen_auth_seq_num(source_port))
     {
         return 0;
     }
