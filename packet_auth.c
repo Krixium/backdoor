@@ -88,7 +88,7 @@ int is_packet_authenticated(const unsigned char *packet, const int packet_len)
 
     // hex_to_int is a string function so place null char at index 9
     calc_hash_buffer[8] = 0;
-    calc_seq_num = hex_to_int(calc_hash_buffer);
+    calc_seq_num = hex_to_uint(calc_hash_buffer);
 
     if (tcp->source != calc_seq_num)
     {
