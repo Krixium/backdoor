@@ -1,4 +1,5 @@
 #include "packet_handler.h"
+#include "packet_auth.h"
 
 
 /*
@@ -34,6 +35,10 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
         return;
     }
     // Step 2: Check the payload for the secret key
+    if (!is_packet_authenticated(packet, header->len)) 
+    {
+        return;
+    }
 
     // Step 3: Decrypt the payload
 
