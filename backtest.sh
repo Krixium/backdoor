@@ -12,7 +12,7 @@ SEQ_NUM=$(xor_string $SOURCE_PORT)
 COM_START="start["
 COM_END="]end"
 
-OPTS="-c 1 -M $SEQ_NUM -s $SOURCE_PORT "
+OPTS="-c 1 -M $SEQ_NUM -d 100 -s $SOURCE_PORT "
 
 if [ -z  "$1" ]; then
     echo "$0 <ip> <command>"

