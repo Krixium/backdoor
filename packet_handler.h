@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <arpa/inet.h>
-#include <netinet/if_ether.h> 
+#include <netinet/if_ether.h>
 #include <net/ethernet.h>
-#include <netinet/ether.h> 
-#include <netinet/ip.h> 
+#include <netinet/ether.h>
+#include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <string.h>
 #include <ctype.h>
@@ -19,8 +19,8 @@
 #define SIZE_ETHERNET 14
 
 
-// tcpdump header (ether.h) defines ETHER_HDRLEN) 
-#ifndef ETHER_HDRLEN 
+// tcpdump header (ether.h) defines ETHER_HDRLEN)
+#ifndef ETHER_HDRLEN
 #define ETHER_HDRLEN 14
 #endif
 
@@ -91,7 +91,7 @@ struct sniff_tcp {
 
 /*
 * Callback function for examining captured packets.
-* 
+*
 * Params:
 *   u_char* args: Pointer to user data.
 *   const struct pcap_pkthdr* header: Struct that contains information about the captured packet.

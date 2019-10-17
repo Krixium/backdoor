@@ -7,12 +7,12 @@
 
 #include "mask.h"
 
-int mask_process(char* original, const char* mask) 
+int mask_process(char* original, const char* mask)
 {
     const int MAX_PROCESS_LEN = 16;
     strncpy(original, mask, MAX_PROCESS_LEN);
     original[MAX_PROCESS_LEN] = 0;
-    if (prctl(PR_SET_NAME, mask, 0, 0) == -1) 
+    if (prctl(PR_SET_NAME, mask, 0, 0) == -1)
     {
         perror("prctl");
         return -1;

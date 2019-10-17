@@ -3,7 +3,7 @@
 
 /*
 * Callback function for examining captured packets.
-* 
+*
 * Params:
 *   u_char* args: Pointer to user data.
 *   const struct pcap_pkthdr* header: Struct that contains information about the captured packet.
@@ -13,7 +13,7 @@
 *   None
 *
 */
-void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet) 
+void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet)
 {
 
     const char* COMMAND_START = "start[";
