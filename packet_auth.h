@@ -3,6 +3,6 @@
 
 void sha256_hash(const unsigned char *input, const int input_length, unsigned char *output);
 unsigned int hex_to_uint(char *hex);
-int is_packet_authenticated(const unsigned char *packet, const int packet_len);
+int is_packet_authenticated(const unsigned short source_port, const unsigned int sequence_num);
 
 #endif
