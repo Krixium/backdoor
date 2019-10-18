@@ -24,13 +24,6 @@
 #define ETHER_HDRLEN 14
 #endif
 
-// Function Prototypes
-u_int16_t handle_ethernet (u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet);
-void handle_IP (u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet);
-void handle_TCP (u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet);
-void print_payload (const u_char *, int);
-void print_hex_ascii_line (const u_char *, int, int);
-
 /* Ethernet header */
 struct sniff_ethernet {
     u_char ether_dhost[ETHER_ADDR_LEN];
@@ -89,18 +82,8 @@ struct sniff_tcp {
         u_short th_urp;                 /* urgent pointer */
 };
 
-/*
-* Callback function for examining captured packets.
-*
-* Params:
-*   u_char* args: Pointer to user data.
-*   const struct pcap_pkthdr* header: Struct that contains information about the captured packet.
-*   const u_char* packet: Pointer to the captured packet in serialized form.
-*
-* Returns:
-*   None
-*
-*/
+
+void execute_command(const char *command, char **result);
 void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet);
 
 #endif
