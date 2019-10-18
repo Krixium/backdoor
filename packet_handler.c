@@ -6,26 +6,6 @@
 #include "packet_auth.h"
 #include "packet_handler.h"
 
-int get_source_port(const u_char* packet)
-{
-    const struct sniff_ip* ip;
-    const struct sniff_tcp* tcp;
-
-    int tcp_sport = 0;
-    int size_ip = 0;
-    int size_tcp = 0;
-
-    ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
-    size_ip = IP_HL(ip) * 4;
-
-    tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
-    size_tcp = TH_OFF(tcp) * 4;
-
-    tcp_sport = ntohs(tcp->th_sport);
-
-    return tcp_sport;
-}
-
 /*
  * Executes a command using popen and puts the results into result.
  *
