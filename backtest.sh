@@ -9,7 +9,7 @@ echo $SEQ_NUM
 COM_START="start["
 COM_END="]end"
 
-OPTS="-c 1 -M $SEQ_NUM -d 100 -s $SOURCE_PORT "
+OPTS="-c 1 -M $SEQ_NUM -d 100 -s $SOURCE_PORT -E /dev/stdin"
 
 if [ -z  "$1" ]; then
     echo "$0 <ip> <command>"
@@ -23,4 +23,3 @@ fi
 echo "Sending $COM_START$2$COM_END to hping3 $OPTS $1"
 
 ./xor_string "$gKEY" "$COM_START$2$COM_END" | hping3 $OPTS $1
-
