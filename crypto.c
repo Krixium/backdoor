@@ -1,5 +1,7 @@
 #include "crypto.h"
 
+#include <stdio.h>
+
 /*
  * Performs XOR encryption.
  *
@@ -39,5 +41,24 @@ void xor_decrypt(const char *key, const int key_len, const char* ciphertext, con
     for (int i = 0; i < ciphertext_len; i++)
     {
         plaintext[i] = ciphertext[i] ^ key[i % key_len];
+    }
+}
+
+/*
+ * Converts a hex string to the actual byte value.
+ *
+ * Params:
+ *      const char *hex_str: The hex string to convert.
+ *      char *output: The buffer to place the converted bytes.
+ *      const int len: The length of the hex_string and output buffer.
+ */
+void hex_str_to_bytes(const char *hex_str, char *output, const int len)
+{
+    const char *pos = hex_str;
+
+    for (int i = 0; i < len; i++)
+    {
+        sscanf(pos, "%2hhx", &output[i]);
+        pos += 2;
     }
 }

