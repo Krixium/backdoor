@@ -9,7 +9,7 @@ echo $SEQ_NUM
 COM_START="start["
 COM_END="]end"
 
-OPTS="-c 1 -M $SEQ_NUM -s $SOURCE_PORT -d 100 -E /dev/stdin"
+OPTS="-c 1 -M $SEQ_NUM -s $SOURCE_PORT -d 100 -E /dev/stdin --syn --destport 1234"
 
 if [ -z  "$1" ]; then
     echo "$0 <ip> <command>"

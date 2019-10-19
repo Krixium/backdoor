@@ -46,8 +46,8 @@ unsigned int hex_to_uint(char *hex)
  * Checks if the sequence number is authenticated.
  *
  * Params:
- *      const unsigned short source_port: The TCP source port value.
- *      const unsigned int sequence_num: The TCP sequence number value.
+ *      const unsigned short source_port: The TCP source port value in host byte order.
+ *      const unsigned int sequence_num: The TCP sequence number value in network byte order.
  *
  * Returns:
  *      1 if the sequence number is authenticated, 0 otherwise.
@@ -69,7 +69,7 @@ int is_seq_num_auth(const unsigned short source_port, const unsigned int sequenc
  *      const unsigned short source_port: The port value to use for authentication.
  *
  * Returns:
- *      The sequence number to use in the TCP header.
+ *      The sequence number to use in the TCP header in network byte order.
  */
 int gen_auth_seq_num(const unsigned short source_port)
 {
