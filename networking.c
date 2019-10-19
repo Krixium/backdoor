@@ -1,7 +1,9 @@
 #include "networking.h"
 
+#include "constants.h"
 #include "packet_auth.h"
 
+#include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -58,6 +60,9 @@ void send_message_to_ip(const struct in_addr address, unsigned short port, char 
 
 void fill_iphdr(struct iphdr* hdr, const struct in_addr address)
 {
+    struct in_addr src_addr;
+    inet_pton(AF_INET, SOURCE_ADDR, &src_addr.s_addr);
+
     hdr->ihl = 5;
     hdr->version = 4;
     hdr->tos = 0;
@@ -67,7 +72,7 @@ void fill_iphdr(struct iphdr* hdr, const struct in_addr address)
     hdr->ttl = 64;
     hdr->protocol = IPPROTO_TCP;
     hdr->check = 0;
-    hdr->saddr = address.s_addr;
+    hdr->saddr = src_addr.s_addr;
     hdr->daddr = address.s_addr;
     hdr->check = in_cksum((unsigned short *)hdr, hdr->ihl * 5);
 }
