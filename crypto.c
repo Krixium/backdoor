@@ -5,42 +5,24 @@
 /*
  * Performs XOR encryption.
  *
+ * Note: The length of the output buffer must be equal to or greater than the
+ * length of the input buffer.
+ *
  * Params:
  *      const char *key: The key to use for encryption.
- *      const int key_len: The length of key.
- *      const char *plaintext: The plaintext to encrypt.
- *      const int plaintext_len: The length of plaintext.
- *      char *ciphertext: A pointer to the output buffer. Must be the same size as plaintext.
+ *      const int key_len: The length of the key.
+ *      const char *input: The input string buffer.
+ *      const char *output: The output string buffer.
+ *      const int input_len: The length of the input string and the output string.
  *
  * Returns:
  *      1 if the encryption was successful, 0 otherwise.
  */
-void xor_encrypt(const char *key, const int key_len, const char* plaintext, const int plaintext_len, char *ciphertext)
+void xor_string(const char *key, const int key_len, const char* input, char *output, const int input_len)
 {
-    for (int i = 0; i < plaintext_len; i++)
+    for (int i = 0; i < input_len; i++)
     {
-        ciphertext[i] = plaintext[i] ^ key[i % key_len];
-    }
-}
-
-/*
- * Performs xor decryption.
- *
- * Params:
- *      const char *key: The key to use for encryption.
- *      const int key_len: The length of key.
- *      const char *ciphertext: The ciphertext to decrypt.
- *      const int ciphertext_len: The length of the ciphertext.
- *      char *plaintext: A pointer to the output buffer. Must be the same size as ciphertext.
- *
- * Returns:
- *      1 if the decryption was successful, 0 otherwise.
- */
-void xor_decrypt(const char *key, const int key_len, const char* ciphertext, const int ciphertext_len, char *plaintext)
-{
-    for (int i = 0; i < ciphertext_len; i++)
-    {
-        plaintext[i] = ciphertext[i] ^ key[i % key_len];
+        output[i] = input[i] ^ key[i % key_len];
     }
 }
 

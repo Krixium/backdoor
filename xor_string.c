@@ -8,7 +8,7 @@ int main(int argc, char** argv)
     char buffer[1024];
     memset(buffer, 0, 1024);
 
-    xor_encrypt(argv[1], strlen(argv[1]), argv[2], strlen(argv[2]), buffer);
+    xor_string(argv[1], strlen(argv[1]), argv[2], buffer, strlen(argv[2]));
 
     for (int i = 0; i < strlen(argv[2]); i++)
     {

