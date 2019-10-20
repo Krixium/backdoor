@@ -74,6 +74,13 @@ int start(int argc, char** argv, Mode mode)
     {
         if (!(temp->flags & PCAP_IF_LOOPBACK))
         {
+            for (pcap_addr_t *a = temp->addresses; a != NULL; a = a->next)
+            {
+                if (a->addr->sa_family == AF_INET)
+                {
+                    args.address = ((struct sockaddr_in*)a->addr)->sin_addr;
+                }
+            }
             break;
         }
     }
@@ -92,8 +99,6 @@ int start(int argc, char** argv, Mode mode)
         fprintf(stderr, "pcap_lookupnet: %s\n", errbuf);
         return -1;
     }
-
-    args.address.s_addr = net_addr;
 
     // Compile the filter string
     if (pcap_compile(session, &filter_program, filter_string, 0, net_addr) == -1)
