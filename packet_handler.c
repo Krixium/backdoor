@@ -33,7 +33,7 @@ char** execute_command(const char *command, int *size)
     int i = 1;
     while (fgets(line_buffer, MAX_LINE_LEN, fp))
     {
-        temp = realloc(result, strlen(line_buffer));
+        temp = realloc(result, i * sizeof(char*));
         if (!temp) 
         {
             perror("realloc");
