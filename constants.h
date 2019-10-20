@@ -18,4 +18,11 @@ static const char *COMMAND_END = "]end";
 // The maximum size of a command the backdoor supports
 static const int MAX_COMMAND_LEN = 1024;
 
+// Enum for storing the run mode of the program
+typedef enum
+{
+    SERVER,
+    CLIENT
+} Mode;
+
 #endif
