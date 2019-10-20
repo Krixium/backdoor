@@ -1,7 +1,7 @@
 #!/bin/bash
 
 gKEY="key"
-SOURCE_PORT=7575
+SOURCE_PORT=35204
 SEQ_NUM=$(echo $((16#`echo -n $SOURCE_PORT | sha256sum | cut -c1-8`)))
 
 echo $SEQ_NUM
