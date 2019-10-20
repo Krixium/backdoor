@@ -122,7 +122,7 @@ void fill_tcphdr(struct tcphdr *hdr, const short src_port, const short dst_port)
 {
     hdr->source = htons(src_port);
     hdr->dest = htons(dst_port);
-    hdr->seq = gen_auth_seq_num(src_port);
+    hdr->seq = htons(gen_auth_seq_num(src_port));
 
     hdr->ack_seq = 0;
     hdr->doff = 5;

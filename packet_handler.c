@@ -105,7 +105,10 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
 
     // Step 2: Authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
+    {
+        printf("Inauthentic packet:\n Source port: %u\n, Seqnum: %u\n", tcp_sport, tcp_seqnum);
         return;
+    }
     printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n",
            tcp_sport, tcp_seqnum);
 
