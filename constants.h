@@ -21,8 +21,8 @@ static const int MAX_COMMAND_LEN = 1024;
 // Enum for storing the run mode of the program
 typedef enum
 {
-    SERVER,
-    CLIENT
+    CONTROLLER,
+    BACKDOOR
 } Mode;
 
 #endif

