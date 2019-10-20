@@ -121,6 +121,10 @@ int start_client(int argc, char* argv[])
 
 
     // Receiving
+    if (fork() == 0)
+    {
+
+    }
 
     // Sending
     issue_command(argv[1], argv[2]);

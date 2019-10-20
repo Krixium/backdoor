@@ -79,7 +79,7 @@ int is_seq_num_auth(const unsigned short source_port,
  * authentication.
  *
  * Returns:
- *      The sequence number to use in the TCP header in network byte order.
+ *      The sequence number to use in the TCP header in host byte order.
  */
 int gen_auth_seq_num(const unsigned short source_port)
 {
