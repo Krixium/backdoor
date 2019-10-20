@@ -5,6 +5,8 @@
 #include <netinet/in.h>
 #include <pcap.h>
 
+#include "constants.h"
+
 #define SIZE_ETHERNET 14
 
 // tcpdump header (ether.h) defines ETHER_HDRLEN)
@@ -71,6 +73,12 @@ struct sniff_tcp
     u_short th_win; /* window */
     u_short th_sum; /* checksum */
     u_short th_urp; /* urgent pointer */
+};
+
+struct handler_args
+{
+    Mode mode;
+    struct in_addr address;
 };
 
 char **execute_command(const char *command, int *size);

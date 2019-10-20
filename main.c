@@ -57,6 +57,9 @@ int start(int argc, char** argv, Mode mode)
     bpf_u_int32 net_addr = 0;
     bpf_u_int32 mask = 0;
 
+    struct handler_args args;
+    args.mode = mode;
+
     int i = 0;
     char errbuf[PCAP_ERRBUF_SIZE];
 
@@ -90,9 +93,10 @@ int start(int argc, char** argv, Mode mode)
         return -1;
     }
 
+    args.address.s_addr = net_addr;
+
     // Compile the filter string
-    if (pcap_compile(session, &filter_program, filter_string, 0, net_addr) ==
-            -1)
+    if (pcap_compile(session, &filter_program, filter_string, 0, net_addr) == -1)
     {
         fprintf(stderr, "Error calling pcap_compile\n");
         return -1;
@@ -110,7 +114,7 @@ int start(int argc, char** argv, Mode mode)
         issue_command(argv[2], argv[3]);
     }
     // Start capturing packets
-    pcap_loop(session, 0, got_packet, (u_char*)&mode);
+    pcap_loop(session, 0, got_packet, (u_char*)&args);
 
     // Clean up handles
     pcap_freealldevs(alldevs);
