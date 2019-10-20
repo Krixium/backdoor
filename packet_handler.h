@@ -69,7 +69,7 @@ struct sniff_tcp {
     u_short th_urp;                 /* urgent pointer */
 };
 
-void execute_command(const char *command, char **result);
+char** execute_command(const char *command, int *size);
 void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet);
 
 #endif
