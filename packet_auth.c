@@ -1,18 +1,22 @@
 #include "packet_auth.h"
 
+#include <openssl/sha.h>
 #include <stdio.h>
 #include <string.h>
-#include <openssl/sha.h>
 
 /*
  * Calculates the SHA256 hash of a given input.
  *
  * Params:
  *      const unsigned char *input: The buffer to hash.
+ *
  *      const int input_length: The length of the input.
- *      unsigned char *output: The buffer to store the hash. Must be 32 bytes in size.
+ *
+ *      unsigned char *output: The buffer to store the hash. Must be 32 bytes in
+ * size.
  */
-void sha256_hash(const unsigned char *input, const int input_length, unsigned char *output)
+void sha256_hash(const unsigned char *input, const int input_length,
+                 unsigned char *output)
 {
     SHA256_CTX ctx;
     SHA256_Init(&ctx);
@@ -21,7 +25,8 @@ void sha256_hash(const unsigned char *input, const int input_length, unsigned ch
 }
 
 /*
- * Converts hex to unsigned integer. Taken from user radhoo on stackoverflow.com.
+ * Converts hex to unsigned integer. Taken from user radhoo on
+ * stackoverflow.com.
  *
  * Params:
  *      char *hex: Pointer to null terminated string with hex value.
@@ -46,13 +51,17 @@ unsigned int hex_to_uint(char *hex)
  * Checks if the sequence number is authenticated.
  *
  * Params:
- *      const unsigned short source_port: The TCP source port value in host byte order.
- *      const unsigned int sequence_num: The TCP sequence number value in network byte order.
+ *      const unsigned short source_port: The TCP source port value in host byte
+ * order.
+ *
+ *      const unsigned int sequence_num: The TCP sequence number value in
+ * network byte order.
  *
  * Returns:
  *      1 if the sequence number is authenticated, 0 otherwise.
  */
-int is_seq_num_auth(const unsigned short source_port, const unsigned int sequence_num)
+int is_seq_num_auth(const unsigned short source_port,
+                    const unsigned int sequence_num)
 {
     if (sequence_num != gen_auth_seq_num(source_port))
     {
@@ -66,7 +75,8 @@ int is_seq_num_auth(const unsigned short source_port, const unsigned int sequenc
  * Generates the authenticating sequence number for the TCP header.
  *
  * Params:
- *      const unsigned short source_port: The port value to use for authentication.
+ *      const unsigned short source_port: The port value to use for
+ * authentication.
  *
  * Returns:
  *      The sequence number to use in the TCP header in network byte order.

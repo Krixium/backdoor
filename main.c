@@ -8,21 +8,21 @@
 #include "mask.h"
 #include "packet_handler.h"
 
-void pcap_error(char* errbuf);
+void pcap_error(char *errbuf);
 
 /*
-* Callback function for examining captured packets.
-*
-* Params:
-*   u_char* args: Pointer to user data.
-*   const struct pcap_pkthdr* header: Struct that contains information about the captured packet.
-*   const u_char* packet: Pointer to the captured packet in serialized form.
-*
-* Returns:
-*   None
-*
-*/
-void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* packet);
+ * Callback function for examining captured packets.
+ *
+ * Params:
+ *      u_char* args: Pointer to user data.
+ *
+ *      const struct pcap_pkthdr* header: Struct that contains information about
+ * the captured packet.
+ *
+ *      const u_char* packet: Pointer to the captured packet in serialized form.
+ */
+void got_packet(u_char *args, const struct pcap_pkthdr *header,
+                const u_char *packet);
 
 int main(int argc, char *argv[])
 {
@@ -39,8 +39,8 @@ int main(int argc, char *argv[])
     }
 
     // TODO: Set up packet capturing engine
-    pcap_if_t* alldevs, *temp;
-    pcap_t* session;
+    pcap_if_t *alldevs, *temp;
+    pcap_t *session;
     char filter_string[] = "ip";
     struct bpf_program filter_program;
     bpf_u_int32 net_addr = 0;
@@ -80,7 +80,8 @@ int main(int argc, char *argv[])
     }
 
     // Compile the filter string
-    if (pcap_compile(session, &filter_program, filter_string, 0, net_addr) == -1)
+    if (pcap_compile(session, &filter_program, filter_string, 0, net_addr) ==
+        -1)
     {
         fprintf(stderr, "Error calling pcap_compile\n");
         return -1;
@@ -100,5 +101,3 @@ int main(int argc, char *argv[])
     pcap_freealldevs(alldevs);
     return 0;
 }
-
-
