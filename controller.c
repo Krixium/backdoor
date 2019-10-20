@@ -2,6 +2,7 @@
 
 #include "constants.h"
 #include "networking.h"
+#include "crypto.h"
 
 #include <arpa/inet.h>
 #include <stdlib.h>

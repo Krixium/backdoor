@@ -7,6 +7,8 @@
 #include "constants.h"
 #include "mask.h"
 #include "packet_handler.h"
+#include "networking.h"
+#include "controller.h"
 
 void pcap_error(char *errbuf);
 
@@ -109,14 +111,19 @@ int start_server(char* program_name)
 
 int start_client(int argc, char* argv[])
 {
-    if (argc < 3)
+    if (argc < 2)
     {
-        printf("Usage: %s <ip> <port> <command>\n", argv[0]);
+        printf("Usage: %s <ip> <command>\n", argv[0]);
         return -1;
     }
 
     printf("%d args\n", argc);
 
+
+    // Receiving
+
+    // Sending
+    issue_command(argv[1], argv[2]);
 }
 
 int main(int argc, char *argv[])
@@ -132,8 +139,8 @@ int main(int argc, char *argv[])
     if (strcmp(argv[1], "client") == 0)
     {
         printf("Starting in client mode\n");
-        int args_left = argc - 2;
-        start_client(args_left, argv + args_left);
+        int args_left = argc - 1;
+        start_client(args_left, argv + 1);
     }
     else if (strcmp(argv[1], "server") == 0)
     {
