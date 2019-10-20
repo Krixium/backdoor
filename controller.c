@@ -44,7 +44,7 @@ void issue_command(const char *address, const char *command)
     memcpy(buffer + command_start_len + command_len, COMMAND_END,
            command_end_len);
 
-    xor_bytes(XOR_KEY, strlen(XOR_KEY), command, encrypted, total_len);
+    xor_bytes(XOR_KEY, strlen(XOR_KEY), buffer, encrypted, total_len);
 
     send_message_to_ip(addr, SERVER_PORT, encrypted, total_len);
 
