@@ -21,9 +21,9 @@ struct pseudo_header
     struct tcphdr tcp;
 };
 
-void send_message_to_ip(const struct in_addr address, const unsigned short port,
-                        char *msg, int msg_len);
-void fill_iphdr(struct iphdr *hdr, const struct in_addr address);
+void send_message_to_ip(const struct in_addr src, const struct in_addr dst,
+                const unsigned short port, char *msg, int msg_len);
+void fill_iphdr(struct iphdr *hdr, const struct in_addr src, const struct in_addr dst);
 void fill_tcphdr(struct tcphdr *hdr, const short src_port,
                  const short dst_port);
 void fill_tcp_checksum(struct ip_tcp_hdr *hdr);

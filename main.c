@@ -116,7 +116,7 @@ int start(int argc, char** argv, Mode mode)
 
     if (mode == CONTROLLER)
     {
-        issue_command(argv[2], argv[3]);
+        issue_command(args.address, argv[2], argv[3]);
     }
     // Start capturing packets
     pcap_loop(session, 0, got_packet, (u_char*)&args);
@@ -141,7 +141,7 @@ int start_client(int argc, char* argv[])
     // Receiving
 
     // Sending
-    issue_command(argv[1], argv[2]);
+    // issue_command(argv[1], argv[2]);
 }
 
 int main(int argc, char *argv[])

