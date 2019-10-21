@@ -194,4 +194,5 @@ void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const st
 void controller_mode(const char *decrypted)
 {
     printf("Received response:\n%s\n", decrypted);
+    exit(0);
 }
