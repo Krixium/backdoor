@@ -1,8 +1,8 @@
 #include "controller.h"
 
 #include "constants.h"
-#include "networking.h"
 #include "crypto.h"
+#include "networking.h"
 
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -41,8 +41,7 @@ void issue_command(const struct in_addr this_ip, const char *address, const char
 
     memcpy(buffer, COMMAND_START, command_start_len);
     memcpy(buffer + command_start_len, command, command_len);
-    memcpy(buffer + command_start_len + command_len, COMMAND_END,
-           command_end_len);
+    memcpy(buffer + command_start_len + command_len, COMMAND_END, command_end_len);
 
     xor_bytes(XOR_KEY, strlen(XOR_KEY), buffer, encrypted, total_len);
 

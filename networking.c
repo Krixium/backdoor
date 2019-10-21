@@ -27,8 +27,8 @@
  *      const char *msg: The message to encrypt and send. const int msg_len: The
  * length of the message to send.
  */
-void send_message_to_ip(const struct in_addr src, const struct in_addr dst,
-                        const unsigned short port, char *msg, int msg_len)
+void send_message_to_ip(const struct in_addr src, const struct in_addr dst, const unsigned short port, char *msg,
+                        int msg_len)
 {
     const int SEND_FLAGS = 0;
     int sock;
@@ -68,8 +68,7 @@ void send_message_to_ip(const struct in_addr src, const struct in_addr dst,
         memcpy(packet + hdr_len, msg, msg_len);
 
         // write packet packet
-        sendto(sock, packet, packet_len, SEND_FLAGS, (struct sockaddr *)&sin,
-               sizeof(sin));
+        sendto(sock, packet, packet_len, SEND_FLAGS, (struct sockaddr *)&sin, sizeof(sin));
 
         // clean up
         free(packet);
@@ -159,8 +158,7 @@ void fill_tcp_checksum(struct ip_tcp_hdr *hdr)
     pHeader.tcp_length = tmp;
     memcpy((char *)&pHeader.tcp, (char *)&hdr->tcp, hdr->tcp.doff * 4);
 
-    hdr->tcp.check =
-        in_cksum((unsigned short *)&pHeader, sizeof(struct pseudo_header));
+    hdr->tcp.check = in_cksum((unsigned short *)&pHeader, sizeof(struct pseudo_header));
 }
 
 /* clipped from ping.c (this function is the whore of checksum routines */
@@ -214,6 +212,6 @@ unsigned short in_cksum(unsigned short *ptr, int nbytes)
 
     sum = (sum >> 16) + (sum & 0xffff); /* add high-16 to low-16 */
     sum += (sum >> 16);                 /* add carry */
-    answer = ~sum; /* ones-complement, then truncate to 16 bits */
+    answer = ~sum;                      /* ones-complement, then truncate to 16 bits */
     return (answer);
 } /* end in_cksm() */

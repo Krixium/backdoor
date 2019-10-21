@@ -7,10 +7,10 @@
 #include <errno.h>
 
 #include "constants.h"
-#include "mask.h"
-#include "packet_handler.h"
-#include "networking.h"
 #include "controller.h"
+#include "mask.h"
+#include "networking.h"
+#include "packet_handler.h"
 
 void pcap_error(char *errbuf);
 
@@ -25,15 +25,31 @@ void pcap_error(char *errbuf);
  *
  *      const u_char* packet: Pointer to the captured packet in serialized form.
  */
-void got_packet(u_char *args, const struct pcap_pkthdr *header,
-        const u_char *packet);
+void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
 
-void usage(char* program_name)
+/*
+ * Prints the usage of the program.
+ *
+ * Params:
+ *      char *program_name: argv[0]
+ */
+void usage(char *program_name)
 {
     printf("Usage: %s <mode>\n", program_name);
 }
 
-int start(int argc, char** argv, Mode mode)
+/*
+ * Start of the program. This is where the logic forks into backdoor and controller mode. This is also where the pcap
+ * loop starts.
+ *
+ * Params:
+ *      int argc: The number of command line arguments.
+ *
+ *      char **argv[]: The command line arguments.
+ *
+ *      Mode mode: The operation mode.
+ */
+int start(int argc, char **argv, Mode mode)
 {
     if (mode == BACKDOOR)
     {
@@ -78,7 +94,7 @@ int start(int argc, char** argv, Mode mode)
             {
                 if (a->addr->sa_family == AF_INET)
                 {
-                    args.address = ((struct sockaddr_in*)a->addr)->sin_addr;
+                    args.address = ((struct sockaddr_in *)a->addr)->sin_addr;
                 }
             }
             break;
@@ -119,31 +135,24 @@ int start(int argc, char** argv, Mode mode)
         issue_command(args.address, argv[2], argv[3]);
     }
     // Start capturing packets
-    pcap_loop(session, 0, got_packet, (u_char*)&args);
+    pcap_loop(session, 0, got_packet, (u_char *)&args);
 
     // Clean up handles
     pcap_freealldevs(alldevs);
     return 0;
 }
 
-
-int start_client(int argc, char* argv[])
-{
-    if (argc < 2)
-    {
-        printf("Usage: %s <ip> <command>\n", argv[0]);
-        return -1;
-    }
-
-    printf("%d args\n", argc);
-
-
-    // Receiving
-
-    // Sending
-    // issue_command(argv[1], argv[2]);
-}
-
+/*
+ * Entry point of the program.
+ *
+ * Params;
+ *      int argv: The number of command line arguments.
+ *
+ *      char *argv[]: The command line arguments.
+ *
+ * Returns:
+ *      The return code of the program.
+ */
 int main(int argc, char *argv[])
 {
 
@@ -160,7 +169,6 @@ int main(int argc, char *argv[])
     {
         printf("Starting in client mode\n");
         mode = CONTROLLER;
-
     }
     else if (strcmp(argv[1], "server") == 0)
     {

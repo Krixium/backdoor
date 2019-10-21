@@ -23,8 +23,7 @@
  * Returns:
  *      1 if the encryption was successful, 0 otherwise.
  */
-void xor_bytes(const char *key, const int key_len, const char *input,
-               char *output, const int input_len)
+void xor_bytes(const char *key, const int key_len, const char *input, char *output, const int input_len)
 {
     for (int i = 0; i < input_len; i++)
     {

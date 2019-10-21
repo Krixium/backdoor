@@ -19,3 +19,6 @@ Server mode: Run ```backdoor server``` to start the backdoor server.
 
 Client mode: Run ```backdoor client <ip of server> <command>``` to send a command to the backdoor server at the given IP address.
 
+## Documentation and Testing
+State diagram, pseudocode, testing documents, and packet captures can be found in the `docs` folder.
+

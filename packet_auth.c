@@ -15,8 +15,7 @@
  *      unsigned char *output: The buffer to store the hash. Must be 32 bytes in
  * size.
  */
-void sha256_hash(const unsigned char *input, const int input_length,
-                 unsigned char *output)
+void sha256_hash(const unsigned char *input, const int input_length, unsigned char *output)
 {
     SHA256_CTX ctx;
     SHA256_Init(&ctx);
@@ -60,8 +59,7 @@ unsigned int hex_to_uint(char *hex)
  * Returns:
  *      1 if the sequence number is authenticated, 0 otherwise.
  */
-int is_seq_num_auth(const unsigned short source_port,
-                    const unsigned int sequence_num)
+int is_seq_num_auth(const unsigned short source_port, const unsigned int sequence_num)
 {
     if (sequence_num != gen_auth_seq_num(source_port))
     {
