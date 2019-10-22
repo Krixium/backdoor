@@ -67,6 +67,7 @@ int start(int argc, char **argv, Mode mode)
     }
 
     int pid;
+    char command[MAX_COMMAND_LEN];
 
     pcap_if_t *alldevs, *temp;
     pcap_t *session;
@@ -144,15 +145,12 @@ int start(int argc, char **argv, Mode mode)
 
         if (!pid) // parent
         {
-            // char command[MAX_COMMAND_LEN];
-            issue_command(args.address, argv[2], argv[3]);
-            return 0;
-            // while (1)
-            // {
-                // printf("Enter command:\n");
-                // fgets(command, MAX_COMMAND_LEN, stdin);
-                // issue_command(args.address, argv[2], command);
-            // }
+            while (1)
+            {
+                printf("Enter command:\n");
+                fgets(command, MAX_COMMAND_LEN, stdin);
+                issue_command(args.address, argv[2], command);
+            }
         }
         else // child
         {
@@ -161,12 +159,7 @@ int start(int argc, char **argv, Mode mode)
         }
     }
 
-    // Start capturing packets
-    // pcap_loop(session, 0, got_packet, (u_char *)&args);
-
-    // Clean up handles
-    // pcap_freealldevs(alldevs);
-    return 0;
+        return 0;
 }
 
 /*
