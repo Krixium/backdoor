@@ -81,7 +81,10 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 
     if (ip->ip_src.s_addr == this_ip.s_addr)
     {
-        printf("ignoring packet from self\n");
+        if (mode == BACKDOOR)
+        {
+            printf("ignoring packet from self\n");
+        }
         return;
     }
 
