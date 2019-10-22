@@ -142,16 +142,17 @@ int start(int argc, char **argv, Mode mode)
     {
         pid = fork();
 
-        if (pid) // parent
+        if (!pid) // parent
         {
-            char command[MAX_COMMAND_LEN];
-            // issue_command(args.address, argv[2], argv[3]);
-            while (1)
-            {
-                printf("Enter command:\n");
-                fgets(command, MAX_COMMAND_LEN, stdin);
-                issue_command(args.address, argv[2], command);
-            }
+            // char command[MAX_COMMAND_LEN];
+            issue_command(args.address, argv[2], argv[3]);
+            return 0;
+            // while (1)
+            // {
+                // printf("Enter command:\n");
+                // fgets(command, MAX_COMMAND_LEN, stdin);
+                // issue_command(args.address, argv[2], command);
+            // }
         }
         else // child
         {

