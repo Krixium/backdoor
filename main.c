@@ -105,7 +105,7 @@ int start(int argc, char **argv, Mode mode)
     }
 
     // Start the sniffing session
-    session = pcap_open_live(temp->name, BUFSIZ, 0, -1, errbuf);
+    session = pcap_open_live(temp->name, BUFSIZ, 0, 1, errbuf);
     if (!session)
     {
         fprintf(stderr, "Could not open device %s: %s\n", temp->name, errbuf);
