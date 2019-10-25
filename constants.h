@@ -4,6 +4,11 @@
 // The process name to use when masking the backdoor process
 static const char *NEW_PROCESS_NAME = "apache2";
 
+// 1 for promiscuous mode, 0 for no promiscuous mode
+static const int PCAP_PROMISCUOUS_MODE = 0;
+// The timeout between pcap_loop iterations in ms. Set this to -1 for no delay between loops.
+static const int PCAP_LOOP_DELAY = 1;
+
 // The server port the controller uses to listen for responses
 static const int SERVER_PORT = 42069;
 
