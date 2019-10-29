@@ -27,9 +27,8 @@
  *      const char *msg: The message to encrypt and send. const int msg_len: The
  * length of the message to send.
  */
-void send_message_to_ip(const struct in_addr src, const struct in_addr dst, const unsigned short port, char *msg,
-                        int msg_len)
-{
+void send_message_to_ip(const struct in_addr src, const struct in_addr dst,
+                        const unsigned short port, char *msg, int msg_len) {
     const int SEND_FLAGS = 0;
     int sock;
     int hdr_len;
@@ -61,8 +60,7 @@ void send_message_to_ip(const struct in_addr src, const struct in_addr dst, cons
 
     // create the entire packet
     packet_len = hdr_len + msg_len;
-    if ((packet = (char *)malloc(packet_len)))
-    {
+    if ((packet = (char *)malloc(packet_len))) {
         // copy header and payload int packet
         memcpy(packet, (char *)&send_tcp, hdr_len);
         memcpy(packet + hdr_len, msg, msg_len);
@@ -90,8 +88,7 @@ void send_message_to_ip(const struct in_addr src, const struct in_addr dst, cons
  *
  *      const struct in_addr dst; The destination address to use.
  */
-void fill_iphdr(struct iphdr *hdr, const struct in_addr src, const struct in_addr dst)
-{
+void fill_iphdr(struct iphdr *hdr, const struct in_addr src, const struct in_addr dst) {
     hdr->ihl = 5;
     hdr->version = 4;
     hdr->tos = 0;
@@ -118,8 +115,7 @@ void fill_iphdr(struct iphdr *hdr, const struct in_addr src, const struct in_add
  *
  *      const shrot dst_port: The destination port to use.
  */
-void fill_tcphdr(struct tcphdr *hdr, const short src_port, const short dst_port)
-{
+void fill_tcphdr(struct tcphdr *hdr, const short src_port, const short dst_port) {
     hdr->source = htons(src_port);
     hdr->dest = htons(dst_port);
     hdr->seq = htonl(gen_auth_seq_num(src_port));
@@ -146,8 +142,7 @@ void fill_tcphdr(struct tcphdr *hdr, const short src_port, const short dst_port)
  * Params:
  *      struct ip_tcp_hdr* hdr: The IPv4 and TCP header to checksum.
  */
-void fill_tcp_checksum(struct ip_tcp_hdr *hdr)
-{
+void fill_tcp_checksum(struct ip_tcp_hdr *hdr) {
     struct pseudo_header pHeader;
 
     pHeader.source_address = hdr->ip.saddr;
@@ -179,8 +174,7 @@ void fill_tcp_checksum(struct ip_tcp_hdr *hdr)
  * WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHATIBILITY AND
  * FITNESS FOR A PARTICULAR PURPOSE
  */
-unsigned short in_cksum(unsigned short *ptr, int nbytes)
-{
+unsigned short in_cksum(unsigned short *ptr, int nbytes) {
     register long sum; /* assumes long == 32 bits */
     u_short oddbyte;
     register u_short answer; /* assumes u_short == 16 bits */
@@ -192,15 +186,13 @@ unsigned short in_cksum(unsigned short *ptr, int nbytes)
      */
 
     sum = 0;
-    while (nbytes > 1)
-    {
+    while (nbytes > 1) {
         sum += *ptr++;
         nbytes -= 2;
     }
 
     /* mop up an odd byte, if necessary */
-    if (nbytes == 1)
-    {
+    if (nbytes == 1) {
         oddbyte = 0;                            /* make sure top half is zero */
         *((u_char *)&oddbyte) = *(u_char *)ptr; /* one byte only */
         sum += oddbyte;
