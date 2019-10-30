@@ -16,35 +16,35 @@ int main(int argc, char *argv[]) {
     Crypto cryptoEngine("key");
     UCharVector data({'a', 'b', 'c', 'd', 'e'});
 
+    // crypto examples
     UCharVector ciphertext = cryptoEngine.enc(data);
     UCharVector plaintext = cryptoEngine.dec(ciphertext);
 
     NetworkEngine netEngine;
-    std::cout << "Sending "
-              << netEngine.sendTcp(srcAddr, dstAddr, sport, dport, TcpStack::SYN_FLAG, data)
-              << " bytes on TCP" << std::endl;
-    std::cout << "Sending "
-              << netEngine.sendTcp(srcAddr, dstAddr, sport, dport,
-                                   TcpStack::SYN_FLAG | TcpStack::ACK_FLAG, data)
-              << " bytes on TCP" << std::endl;
-    // udp send causes malloc corrupted top size
-    // std::cout << "Sending " << netEngine.sendUdp(srcAddr, dstAddr, sport, dport, data)
-    //           << " bytes on UDP" << std::endl;
 
+    // tcp sending examples
+    for (int i = 0; i < 10; i++) {
+        std::cout << netEngine.sendTcp(srcAddr, dstAddr, sport, dport, TcpStack::SYN_FLAG, data)
+                  << std::endl;
+        std::cout << netEngine.sendTcp(srcAddr, dstAddr, sport, dport,
+                                       TcpStack::SYN_FLAG | TcpStack::ACK_FLAG, data)
+                  << std::endl;
+    }
 
+    // udp sending examples
+    for (int i = 0; i < 10; i++) {
+        std::cout << netEngine.sendUdp(srcAddr, dstAddr, sport, dport, data) << std::endl;
+    }
 
-    netEngine.packetHandlerFunctions.push_back([](const unsigned char *payload) -> void {
-        std::cout << std::hex << payload[0] << std::endl;
-    });
+    // adding functions to process payload received from pcap loop
+    auto cb1 = [](const unsigned char *payload) -> void { std::cout << "cb1" << std::endl; };
+    auto cb2 = [](const unsigned char *payload) -> void { std::cout << "cb2" << std::endl; };
+    auto cb3 = [](const unsigned char *payload) -> void { std::cout << "cb3" << std::endl; };
+    netEngine.packetHandlerFunctions.push_back(cb1);
+    netEngine.packetHandlerFunctions.push_back(cb2);
+    netEngine.packetHandlerFunctions.push_back(cb3);
 
-    netEngine.packetHandlerFunctions.push_back([](const unsigned char *payload) -> void {
-        std::cout << std::hex << payload[1] << std::endl;
-    });
-
-    netEngine.packetHandlerFunctions.push_back([](const unsigned char *payload) -> void {
-        std::cout << std::hex << payload[2] << std::endl;
-    });
-
+    // exmaple of starting and stopping sniffing
     std::cout << "starting sniff" << std::endl;
     netEngine.startSniff();
     sleep(2);

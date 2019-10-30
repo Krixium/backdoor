@@ -176,6 +176,7 @@ UdpStack::UdpStack(const struct in_addr &saddr, const struct in_addr &daddr, con
     this->ip.tot_len = htons(totalLen);
 
     // copy the payload
+    this->payload.resize(payload.size());
     for (int i = 0; i < payload.size(); i++) {
         this->payload.push_back(payload[i]);
     }
@@ -183,14 +184,13 @@ UdpStack::UdpStack(const struct in_addr &saddr, const struct in_addr &daddr, con
 
 UCharVector UdpStack::getPacket() {
     const int ipLen = this->ip.ihl * 4;
-    const int udpLen = ntohs(this->udp.len) - this->payload.size();
 
     UCharVector packet;
     packet.resize(ntohs(this->ip.tot_len));
 
     memcpy(packet.data(), (char *)&this->ip, ipLen);
-    memcpy(packet.data() + ipLen, (char *)&this->udp, ntohs(udpLen));
-    memcpy(packet.data() + ipLen + udpLen, (char *)this->payload.data(), this->payload.size());
+    memcpy(packet.data() + ipLen, (char *)&this->udp, UdpStack::UDP_HDR_LEN);
+    memcpy(packet.data() + ipLen + UdpStack::UDP_HDR_LEN, (char *)this->payload.data(), this->payload.size());
 
     return packet;
 }
@@ -254,8 +254,9 @@ int NetworkEngine::sendTcp(const std::string &saddr, const std::string &daddr, c
                       payload);
     UCharVector packet = tcpStack.getPacket();
 
-    if (packet.size() > NetworkEngine::MTU)
+    if (packet.size() > NetworkEngine::MTU) {
         return 0;
+    }
 
     sin.sin_family = AF_INET;
     sin.sin_port = tcpStack.tcp.source;
@@ -286,8 +287,9 @@ int NetworkEngine::sendUdp(const std::string &saddr, const std::string &daddr, c
     UdpStack udpStack(sinSrc.sin_addr, sinDst.sin_addr, sport, dport, payload);
     UCharVector packet = udpStack.getPacket();
 
-    if (packet.size() > NetworkEngine::MTU)
+    if (packet.size() > NetworkEngine::MTU) {
         return 0;
+    }
 
     sin.sin_family = AF_INET;
     sin.sin_port = udpStack.udp.source;
@@ -363,6 +365,6 @@ void gotPacket(unsigned char *args, const struct pcap_pkthdr *header, const unsi
     NetworkEngine *netEngine = (NetworkEngine *)args;
 
     for (int i = 0; i < netEngine->packetHandlerFunctions.size(); i++) {
-        netEngine->packetHandlerFunctions[i](packet);
+        (netEngine->packetHandlerFunctions[i])(packet);
     }
 }
