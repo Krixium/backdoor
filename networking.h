@@ -58,6 +58,8 @@ private:
 
 class UdpStack {
 public:
+    static const unsigned short UDP_HDR_LEN = 8;
+
     struct iphdr ip;
     struct udphdr udp;
     UCharVector payload;

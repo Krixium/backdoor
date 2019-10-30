@@ -10,6 +10,16 @@ Crypto::Crypto(const UCharVector &key)
     }
 }
 
+Crypto::Crypto(const std::string &key)
+{
+    this->key.resize(key.size());
+
+    for (unsigned long i = 0; i < key.size(); i++)
+    {
+        this->key[i] = key[i];
+    }
+}
+
 UCharVector Crypto::enc(const UCharVector &data)
 {
     UCharVector result(data.size());

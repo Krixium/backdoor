@@ -9,6 +9,18 @@
 #include <time.h>
 #include <unistd.h>
 
+const unsigned char TcpStack::FIN_FLAG;
+const unsigned char TcpStack::SYN_FLAG;
+const unsigned char TcpStack::RST_FLAG;
+const unsigned char TcpStack::PSH_FLAG;
+const unsigned char TcpStack::ACK_FLAG;
+const unsigned char TcpStack::URG_FLAG;
+const unsigned char TcpStack::ECE_FLAG;
+const unsigned char TcpStack::CWR_FLAG;
+const unsigned short UdpStack::UDP_HDR_LEN;
+const int NetworkEngine::SEND_FLAGS;
+const int NetworkEngine::MTU;
+
 /* clipped from ping.c (this function is the whore of checksum routines */
 /* as everyone seems to use it..I feel so dirty...) */
 
@@ -153,13 +165,14 @@ UdpStack::UdpStack(const struct in_addr &saddr, const struct in_addr &daddr, con
     // fill the udp header
     this->udp.source = htons(sport);
     this->udp.dest = htons(dport);
-    this->udp.len = htons(8 + payload.size());
+    this->udp.len = htons(UdpStack::UDP_HDR_LEN + payload.size());
 
     // calculate checksum
     this->calcChecksum();
 
     // fill the total length in ip header
-    this->ip.tot_len = htons(this->ip.ihl * 4 + this->udp.len + payload.size());
+    short totalLen = this->ip.ihl * 4 + UdpStack::UDP_HDR_LEN + payload.size();
+    this->ip.tot_len = htons(totalLen);
 
     // copy the payload
     for (int i = 0; i < payload.size(); i++) {
@@ -168,14 +181,14 @@ UdpStack::UdpStack(const struct in_addr &saddr, const struct in_addr &daddr, con
 }
 
 UCharVector UdpStack::getPacket() {
-    const int ipLen = this->ip.ihl * 5;
+    const int ipLen = this->ip.ihl * 4;
     const int udpLen = ntohs(this->udp.len) - this->payload.size();
 
     UCharVector packet;
     packet.resize(ntohs(this->ip.tot_len));
 
     memcpy(packet.data(), (char *)&this->ip, ipLen);
-    memcpy(packet.data() + ipLen, (char *)&this->udp, udpLen);
+    memcpy(packet.data() + ipLen, (char *)&this->udp, ntohs(udpLen));
     memcpy(packet.data() + ipLen + udpLen, (char *)this->payload.data(), this->payload.size());
 
     return packet;
@@ -189,7 +202,7 @@ void UdpStack::calcChecksum() {
     pseudo_header.placeholder = 0;
     pseudo_header.protocol = IPPROTO_UDP;
     pseudo_header.udpLen = htons(this->udp.len);
-    memcpy((char *)&pseudo_header.udp, (char *)&this->udp, this->udp.len);
+    memcpy((char *)&pseudo_header.udp, (char *)&this->udp, ntohs(this->udp.len));
 
     this->udp.check = in_cksum((unsigned short *)&pseudo_header, sizeof(struct UdpPseudoHeader));
 }
