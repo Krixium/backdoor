@@ -1,12 +1,16 @@
 #ifndef NETWORKING_H
 #define NETWORKING_H
 
+#include <functional>
+#include <string>
+#include <thread>
+#include <vector>
+
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/udp.h>
 #include <netinet/in.h>
-#include <string>
-#include <vector>
+#include <pcap/pcap.h>
 
 using UCharVector = std::vector<unsigned char>;
 
@@ -79,7 +83,17 @@ private:
     static const int SEND_FLAGS = 0;
     static const int MTU = 1500;
 
+    struct sockaddr_in localAddrss;
+
+    int pcapPromiscuousMode;
+    int pcapLoopDelay;
     int sd;
+    pcap_t *session;
+
+    std::thread *pcapLoopThread;
+
+public:
+    std::vector<std::function<void(const unsigned char *)>> packetHandlerFunctions;
 
 public:
     NetworkEngine();
@@ -91,7 +105,13 @@ public:
     int sendUdp(const std::string &saddr, const std::string &daddr, const short &sport,
                 const short &dport, const UCharVector &payload);
 
+    void startSniff();
+    void stopSniff();
+
 private:
+    void runSniff();
 };
+
+void gotPacket(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
 
 #endif

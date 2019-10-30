@@ -1,6 +1,7 @@
 #include "networking.h"
 
 #include <cstring>
+#include <iostream>
 
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -207,11 +208,22 @@ void UdpStack::calcChecksum() {
     this->udp.check = in_cksum((unsigned short *)&pseudo_header, sizeof(struct UdpPseudoHeader));
 }
 
-NetworkEngine::NetworkEngine() { this->sd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW); }
+NetworkEngine::NetworkEngine() {
+    this->pcapPromiscuousMode = 0;
+    this->pcapLoopDelay = 1;
+    this->sd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+}
 
 NetworkEngine::~NetworkEngine() {
     if (this->sd != -1) {
         close(this->sd);
+    }
+
+    if (this->pcapLoopThread != nullptr) {
+        if (this->pcapLoopThread->joinable()) {
+            this->pcapLoopThread->join();
+        }
+        delete this->pcapLoopThread;
     }
 }
 
@@ -283,4 +295,74 @@ int NetworkEngine::sendUdp(const std::string &saddr, const std::string &daddr, c
 
     return sendto(this->sd, packet.data(), packet.size(), NetworkEngine::SEND_FLAGS,
                   (struct sockaddr *)&sin, sizeof(sin));
+}
+
+void NetworkEngine::startSniff() {
+    this->pcapLoopThread = new std::thread(&NetworkEngine::runSniff, this);
+}
+
+void NetworkEngine::stopSniff() {
+    pcap_breakloop(this->session);
+    this->pcapLoopThread->join();
+    delete this->pcapLoopThread;
+    this->pcapLoopThread = nullptr;
+}
+
+void NetworkEngine::runSniff() {
+    pcap_if_t *allDevs;
+    pcap_if_t *temp;
+
+    char filterString[] = "ip";
+    struct bpf_program filterProgram;
+
+    bpf_u_int32 netAddr = 0;
+    bpf_u_int32 mask = 0;
+
+    char errBuff[PCAP_ERRBUF_SIZE];
+
+    if (pcap_findalldevs(&allDevs, errBuff) == -1) {
+        std::cerr << "pcap_findallDevs: " << errBuff << std::endl;
+        return;
+    }
+
+    int i;
+    for (i = 0, temp = allDevs; temp; temp = temp->next, ++i) {
+        if (!(temp->flags & PCAP_IF_LOOPBACK)) {
+            for (pcap_addr_t *addr = temp->addresses; addr; addr = addr->next) {
+                if (addr->addr->sa_family == AF_INET) {
+                    memcpy(&this->localAddrss, (char *)addr->addr, sizeof(struct sockaddr_in));
+                }
+            }
+            break;
+        }
+    }
+
+    this->session =
+        pcap_open_live(temp->name, BUFSIZ, this->pcapPromiscuousMode, this->pcapLoopDelay, errBuff);
+    if (!this->session) {
+        std::cerr << "Could not open device: " << errBuff << std::endl;
+        return;
+    }
+
+    if (pcap_compile(this->session, &filterProgram, filterString, 0, netAddr)) {
+        std::cerr << "Error calling pcap_compile" << std::endl;
+        return;
+    }
+
+    if (pcap_setfilter(this->session, &filterProgram) == -1) {
+        std::cerr << "Error setting filter" << std::endl;
+        return;
+    }
+
+    pcap_loop(this->session, 0, &gotPacket, (unsigned char *)this);
+    pcap_freealldevs(allDevs);
+}
+
+void gotPacket(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet) {
+    std::cout << "got packet" << std::endl;
+    NetworkEngine *netEngine = (NetworkEngine *)args;
+
+    for (int i = 0; i < netEngine->packetHandlerFunctions.size(); i++) {
+        netEngine->packetHandlerFunctions[i](packet);
+    }
 }
