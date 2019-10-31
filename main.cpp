@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 
+#include "authenticator.h"
 #include "crypto.h"
 #include "networking.h"
 
@@ -13,14 +14,19 @@ int main(int argc, char *argv[]) {
     const short sport = 42069;
     const short dport = 7575;
 
-    Crypto cryptoEngine("key");
     UCharVector data({'a', 'b', 'c', 'd', 'e'});
+
+    Authenticator auth;
+    Crypto cryptoEngine("key");
+    NetworkEngine netEngine;
+
+    std::cout << auth.generateSignature(sport) << std::endl;
+    std::cout << auth.generateSignature(dport) << std::endl;
 
     // crypto examples
     UCharVector ciphertext = cryptoEngine.enc(data);
     UCharVector plaintext = cryptoEngine.dec(ciphertext);
 
-    NetworkEngine netEngine;
 
     // tcp sending examples
     for (int i = 0; i < 10; i++) {
