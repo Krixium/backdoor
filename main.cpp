@@ -27,7 +27,6 @@ int main(int argc, char *argv[]) {
     UCharVector ciphertext = cryptoEngine.enc(data);
     UCharVector plaintext = cryptoEngine.dec(ciphertext);
 
-
     // tcp sending examples
     for (int i = 0; i < 10; i++) {
         std::cout << netEngine.sendTcp(srcAddr, dstAddr, sport, dport, TcpStack::SYN_FLAG, data)
@@ -43,16 +42,22 @@ int main(int argc, char *argv[]) {
     }
 
     // adding functions to process payload received from pcap loop
-    auto cb1 = [](const unsigned char *payload) -> void { std::cout << "cb1" << std::endl; };
-    auto cb2 = [](const unsigned char *payload) -> void { std::cout << "cb2" << std::endl; };
-    auto cb3 = [](const unsigned char *payload) -> void { std::cout << "cb3" << std::endl; };
+    auto cb1 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
+        std::cout << "cb1" << std::endl;
+    };
+    auto cb2 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
+        std::cout << "cb2" << std::endl;
+    };
+    auto cb3 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
+        std::cout << "cb3" << std::endl;
+    };
     netEngine.packetHandlerFunctions.push_back(cb1);
     netEngine.packetHandlerFunctions.push_back(cb2);
     netEngine.packetHandlerFunctions.push_back(cb3);
 
     // exmaple of starting and stopping sniffing
     std::cout << "starting sniff" << std::endl;
-    netEngine.startSniff();
+    netEngine.startIpSniff();
     sleep(2);
     std::cout << "stopping sniff" << std::endl;
     netEngine.stopSniff();

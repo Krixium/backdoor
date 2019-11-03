@@ -90,10 +90,12 @@ private:
     int sd;
     pcap_t *session;
 
+    const char *sniffFilter;
+
     std::thread *pcapLoopThread;
 
 public:
-    std::vector<std::function<void(const unsigned char *)>> packetHandlerFunctions;
+    std::vector<std::function<void(const struct pcap_pkthdr *, const unsigned char *)>> packetHandlerFunctions;
 
 public:
     NetworkEngine();
@@ -105,7 +107,8 @@ public:
     int sendUdp(const std::string &saddr, const std::string &daddr, const short &sport,
                 const short &dport, const UCharVector &payload);
 
-    void startSniff();
+    void startIpSniff();
+    void startArpSniff();
     void stopSniff();
 
 private:

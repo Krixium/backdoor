@@ -190,7 +190,8 @@ UCharVector UdpStack::getPacket() {
 
     memcpy(packet.data(), (char *)&this->ip, ipLen);
     memcpy(packet.data() + ipLen, (char *)&this->udp, UdpStack::UDP_HDR_LEN);
-    memcpy(packet.data() + ipLen + UdpStack::UDP_HDR_LEN, (char *)this->payload.data(), this->payload.size());
+    memcpy(packet.data() + ipLen + UdpStack::UDP_HDR_LEN, (char *)this->payload.data(),
+           this->payload.size());
 
     return packet;
 }
@@ -299,7 +300,13 @@ int NetworkEngine::sendUdp(const std::string &saddr, const std::string &daddr, c
                   (struct sockaddr *)&sin, sizeof(sin));
 }
 
-void NetworkEngine::startSniff() {
+void NetworkEngine::startIpSniff() {
+    this->sniffFilter = "ip";
+    this->pcapLoopThread = new std::thread(&NetworkEngine::runSniff, this);
+}
+
+void NetworkEngine::startArpSniff() {
+    this->sniffFilter = "arp";
     this->pcapLoopThread = new std::thread(&NetworkEngine::runSniff, this);
 }
 
@@ -311,12 +318,12 @@ void NetworkEngine::stopSniff() {
 }
 
 void NetworkEngine::runSniff() {
+    int i;
+
     pcap_if_t *allDevs;
     pcap_if_t *temp;
 
-    char filterString[] = "ip";
     struct bpf_program filterProgram;
-
     bpf_u_int32 netAddr = 0;
     bpf_u_int32 mask = 0;
 
@@ -327,7 +334,6 @@ void NetworkEngine::runSniff() {
         return;
     }
 
-    int i;
     for (i = 0, temp = allDevs; temp; temp = temp->next, ++i) {
         if (!(temp->flags & PCAP_IF_LOOPBACK)) {
             for (pcap_addr_t *addr = temp->addresses; addr; addr = addr->next) {
@@ -346,7 +352,7 @@ void NetworkEngine::runSniff() {
         return;
     }
 
-    if (pcap_compile(this->session, &filterProgram, filterString, 0, netAddr)) {
+    if (pcap_compile(this->session, &filterProgram, this->sniffFilter, 0, netAddr)) {
         std::cerr << "Error calling pcap_compile" << std::endl;
         return;
     }
@@ -361,10 +367,8 @@ void NetworkEngine::runSniff() {
 }
 
 void gotPacket(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet) {
-    std::cout << "got packet" << std::endl;
     NetworkEngine *netEngine = (NetworkEngine *)args;
-
     for (int i = 0; i < netEngine->packetHandlerFunctions.size(); i++) {
-        (netEngine->packetHandlerFunctions[i])(packet);
+        (netEngine->packetHandlerFunctions[i])(header, packet);
     }
 }
