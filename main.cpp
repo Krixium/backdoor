@@ -4,9 +4,10 @@
 
 #include <unistd.h>
 
+#include "NetworkEngine.h"
+#include "TcpStack.h"
 #include "authenticator.h"
 #include "crypto.h"
-#include "networking.h"
 
 int main(int argc, char *argv[]) {
     const std::string srcAddr = "192.168.75.75";
@@ -51,13 +52,13 @@ int main(int argc, char *argv[]) {
     auto cb3 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
         std::cout << "cb3" << std::endl;
     };
-    netEngine.packetHandlerFunctions.push_back(cb1);
-    netEngine.packetHandlerFunctions.push_back(cb2);
-    netEngine.packetHandlerFunctions.push_back(cb3);
+    netEngine.LoopCallbacks.push_back(cb1);
+    netEngine.LoopCallbacks.push_back(cb2);
+    netEngine.LoopCallbacks.push_back(cb3);
 
     // exmaple of starting and stopping sniffing
     std::cout << "starting sniff" << std::endl;
-    netEngine.startIpSniff();
+    netEngine.startSniff(NetworkEngine::IP_FILTER);
     sleep(2);
     std::cout << "stopping sniff" << std::endl;
     netEngine.stopSniff();
