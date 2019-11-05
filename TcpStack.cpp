@@ -34,7 +34,7 @@ const unsigned char TcpStack::CWR_FLAG = 0x80;
  *
  *      const unsigned int &ackNum: The TCP ack sequence number.
  *
- *      const unsgined char &tcpFlags: The TCP flag bit pattern.
+ *      const unsigned char &tcpFlags: The TCP flag bit pattern.
  *
  *      const UCharVector: The TCP payload.
  */
@@ -89,7 +89,7 @@ TcpStack::TcpStack(const struct in_addr &saddr, const struct in_addr &daddr, con
  * Gets the raw bytes of the packet which will be ready to be sent on the network.
  *
  * Returns:
- *      The byte vector that reporesnents the packet.
+ *      The byte vector that represents the packet.
  */
 
 UCharVector TcpStack::getPacket() {
