@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     };
     auto cb2 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
         std::cout << "cb2" << std::endl;
-    }
+    };
     auto cb3 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
         std::cout << "cb3" << std::endl;
     };
@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
 
     // example of starting and stopping sniffing
     std::cout << "starting sniff" << std::endl;
+    // TODO: Change the filter to only capture UDP packets??
     netEngine.startSniff(NetworkEngine::IP_FILTER);
     sleep(2);
     std::cout << "stopping sniff" << std::endl;
