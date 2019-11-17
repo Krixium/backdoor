@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
     // example of starting and stopping sniffing
     std::cout << "starting sniff" << std::endl;
-    // TODO: Change the filter to only capture UDP packets??
+    // TODO: Change the filter to only capture UDP packets for the port we're listening on?
     netEngine.startSniff(NetworkEngine::IP_FILTER);
     sleep(2);
     std::cout << "stopping sniff" << std::endl;
