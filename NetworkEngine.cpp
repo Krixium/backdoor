@@ -200,7 +200,7 @@ void NetworkEngine::runSniff(const char *filter) {
         if (!(temp->flags & PCAP_IF_LOOPBACK)) {
             for (pcap_addr_t *addr = temp->addresses; addr; addr = addr->next) {
                 if (addr->addr->sa_family == AF_INET) {
-                    memcpy(&this->localAddrss, (char *)addr->addr, sizeof(struct sockaddr_in));
+                    memcpy(&this->localAddress, (char *)addr->addr, sizeof(struct sockaddr_in));
                 }
             }
             break;

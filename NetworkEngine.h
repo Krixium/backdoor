@@ -8,6 +8,8 @@
 
 #include <pcap/pcap.h>
 
+#include <arpa/inet.h>
+
 using UCharVector = std::vector<unsigned char>;
 
 class NetworkEngine {
@@ -15,7 +17,7 @@ private:
     static const int SEND_FLAGS;
     static const int MTU;
 
-    struct sockaddr_in localAddrss;
+    struct sockaddr_in localAddress;
 
     int pcapPromiscuousMode;
     int pcapLoopDelay;
