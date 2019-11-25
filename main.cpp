@@ -4,9 +4,9 @@
 
 #include <unistd.h>
 
+#include "authenticator.h"
 #include "NetworkEngine.h"
 #include "TcpStack.h"
-#include "authenticator.h"
 #include "crypto.h"
 
 #include "Keylogger.h"

@@ -7,13 +7,19 @@ KnockController::KnockController(const std::string &pattern, const std::string &
     : pattern(pattern), interface(interface), portString(std::to_string(port)),
       duration(std::to_string(duration)), states() {}
 
+KnockController::~KnockController() {
+    for (auto &it : this->states) {
+        delete it.second;
+    }
+}
+
 void KnockController::process(const struct in_addr *address, const unsigned port) {
     unsigned int key = (unsigned int)address->s_addr;
 
     try {
         this->states.at(key)->tick(port);
     } catch (const std::out_of_range &orr) {
-        this->states.insert({key, std::make_unique<KnockState>(this->pattern)});
+        this->states.insert({key, new KnockState(this->pattern)});
         this->states.at(key)->tick(port);
     }
 

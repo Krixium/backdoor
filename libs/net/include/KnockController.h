@@ -12,11 +12,12 @@ private:
     std::string interface;
     std::string portString;
     std::string duration;
-    std::unordered_map<unsigned int, std::unique_ptr<KnockState>> states;
+    std::unordered_map<unsigned int, KnockState*> states;
 
 public:
-    KnockController(const std::string& pattern, const std::string& interface,
-                    const unsigned port, const unsigned int duration);
+    KnockController(const std::string& pattern, const std::string& interface, const unsigned port,
+                    const unsigned int duration);
+    ~KnockController();
 
     void process(const struct in_addr* address, const unsigned port);
 

@@ -11,10 +11,11 @@ include(FindPCAP.cmake)
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 
-add_executable(backdoor main.cpp crypto.cpp authenticator.cpp NetworkEngine.cpp TcpStack.cpp UdpStack.cpp)
+add_executable(backdoor main.cpp crypto.cpp)
 
 add_subdirectory(libs/keylogger)
-target_link_libraries(backdoor keylogger ${PCAP_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+add_subdirectory(libs/net)
+target_link_libraries(backdoor keylogger net ${PCAP_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
