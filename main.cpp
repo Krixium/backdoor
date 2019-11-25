@@ -12,6 +12,7 @@
 #include "Keylogger.h"
 
 int main(int argc, char *argv[]) {
+    const char *interfaceName = "wlp59s0";
     const short sport = 42069;
     const short dport = 7575;
     struct in_addr srcAddr;
@@ -26,7 +27,7 @@ int main(int argc, char *argv[]) {
 
     Authenticator auth;
     Crypto cryptoEngine("key");
-    NetworkEngine netEngine;
+    NetworkEngine netEngine(interfaceName);
 
     std::cout << auth.generateSignature(sport) << std::endl;
     std::cout << auth.generateSignature(dport) << std::endl;
@@ -50,13 +51,13 @@ int main(int argc, char *argv[]) {
     }
 
     // adding functions to process payload received from pcap loop
-    auto cb1 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
+    auto cb1 = [](const pcap_pkthdr *header, const unsigned char *payload, NetworkEngine *) -> void {
         std::cout << "cb1" << std::endl;
     };
-    auto cb2 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
+    auto cb2 = [](const pcap_pkthdr *header, const unsigned char *payload, NetworkEngine *) -> void {
         std::cout << "cb2" << std::endl;
     };
-    auto cb3 = [](const pcap_pkthdr *header, const unsigned char *payload) -> void {
+    auto cb3 = [](const pcap_pkthdr *header, const unsigned char *payload, NetworkEngine *) -> void {
         std::cout << "cb3" << std::endl;
     };
     netEngine.LoopCallbacks.push_back(cb1);

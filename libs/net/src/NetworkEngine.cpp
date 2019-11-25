@@ -2,6 +2,9 @@
 
 #include <cstring>
 #include <iostream>
+
+#include <linux/if.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 #include "TcpStack.h"
@@ -21,13 +24,13 @@ const char *NetworkEngine::ARP_FILTER = "arp";
  * Constructor for NetworkEngine. The network engine is a class that handles pcap packet sniffing as
  * well as sending crafted TCP and UDP packets using raw sockets.
  */
-NetworkEngine::NetworkEngine() {
-    this->pcapPromiscuousMode = 0;
-    this->pcapLoopDelay = 1;
+NetworkEngine::NetworkEngine(const char *interfaceName)
+    : pcapPromiscuousMode(0), pcapLoopDelay(1), session(nullptr), sniffThread(nullptr) {
     this->sd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+    this->getInterfaceInfo(interfaceName);
 
-    this->session = nullptr;
-    this->sniffThread = nullptr;
+    this->knockController =
+        new KnockController("1111,2222,3333,4444", std::string(interfaceName), 42069, 10);
 }
 
 /*
@@ -39,6 +42,64 @@ NetworkEngine::~NetworkEngine() {
     }
 
     this->stopSniff();
+
+    delete this->knockController;
+}
+
+/*
+ * Grabs the interface index number, MAC address, and IP address and saves it.
+ *
+ * Params:
+ *      const char *interfaceName: The name of the interface to query.
+ */
+void NetworkEngine::getInterfaceInfo(const char *interfaceName) {
+    struct ifreq ifr;
+    int sd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
+
+    if (sd <= 0) {
+        close(sd);
+        return;
+    }
+
+    if (strlen(interfaceName) > (IFNAMSIZ - 1)) {
+        close(sd);
+        return;
+    }
+
+    strcpy(ifr.ifr_name, interfaceName);
+
+    // get interface index using name
+    if (ioctl(sd, SIOCGIFINDEX, &ifr) == -1) {
+        close(sd);
+        return;
+    }
+
+    this->ifindex = ifr.ifr_ifindex;
+
+    // get MAC address of the interface
+    if (ioctl(sd, SIOCGIFHWADDR, &ifr) == -1) {
+        close(sd);
+        return;
+    }
+
+    // copy mac address to output
+    memcpy(this->mac, ifr.ifr_hwaddr.sa_data, 6);
+
+    if (strlen(interfaceName) <= (IFNAMSIZ - 1)) {
+        if (ioctl(sd, SIOCGIFADDR, &ifr) == -1) {
+            close(sd);
+            return;
+        }
+
+        if (ifr.ifr_addr.sa_family == AF_INET) {
+            struct sockaddr_in *tmp = (struct sockaddr_in *)&ifr.ifr_addr;
+            memcpy(&this->ip, &tmp->sin_addr, sizeof(struct sockaddr_in));
+        }
+    }
+
+    if (sd > 0) {
+        close(sd);
+    }
 }
 
 /*
@@ -223,6 +284,6 @@ void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *hea
                               const unsigned char *packet) {
     NetworkEngine *netEngine = (NetworkEngine *)args;
     for (int i = 0; i < netEngine->LoopCallbacks.size(); i++) {
-        (netEngine->LoopCallbacks[i])(header, packet);
+        (netEngine->LoopCallbacks[i])(header, packet, netEngine);
     }
 }
