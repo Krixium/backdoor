@@ -18,7 +18,7 @@ const char *NetworkEngine::IP_FILTER = "ip";
 const char *NetworkEngine::ARP_FILTER = "arp";
 
 /*
- * Contructor for NetworkEngine. The network engine is a class that handles pcap packet sniffing as
+ * Constructor for NetworkEngine. The network engine is a class that handles pcap packet sniffing as
  * well as sending crafted TCP and UDP packets using raw sockets.
  */
 NetworkEngine::NetworkEngine() {
@@ -45,9 +45,9 @@ NetworkEngine::~NetworkEngine() {
  * Sends a TCP packet with the given parameters.
  *
  * Params:
- *      const std::string &saddr: The dotted decimal string of the source address.
+ *      const std::string &saddr: The source address.
  *
- *      const std::string &daddr: The dotted decimal string of the destination address.
+ *      const std::string &daddr: The destination address.
  *
  *      const short &sport: The source port.
  *
@@ -60,31 +60,20 @@ NetworkEngine::~NetworkEngine() {
  * Returns:
  *      The number of bytes sent.
  */
-int NetworkEngine::sendTcp(const std::string &saddr, const std::string &daddr, const short &sport,
-                           const short &dport, const unsigned char &tcpFlags,
-                           const UCharVector &payload) {
+int NetworkEngine::sendRawTcp(const struct in_addr &saddr, const struct in_addr &daddr,
+                              const short &sport, const short &dport, const unsigned char &tcpFlags,
+                              const UCharVector &payload) {
     if (this->sd == -1) {
         return 0;
     }
 
     struct sockaddr_in sin;
-    struct sockaddr_in sinSrc;
-    struct sockaddr_in sinDst;
-
-    if (inet_pton(AF_INET, saddr.c_str(), &sinSrc.sin_addr) != 1) {
-        return 0;
-    }
-
-    if (inet_pton(AF_INET, daddr.c_str(), &sinDst.sin_addr) != 1) {
-        return 0;
-    }
 
     srand(time(NULL));
     unsigned int seq_num = rand() % 0xFFFFFFFF;
     unsigned int ack_num = rand() % 0xFFFFFFFF;
 
-    TcpStack tcpStack(sinSrc.sin_addr, sinDst.sin_addr, sport, dport, seq_num, ack_num, tcpFlags,
-                      payload);
+    TcpStack tcpStack(saddr, daddr, sport, dport, seq_num, ack_num, tcpFlags, payload);
     UCharVector packet = tcpStack.getPacket();
 
     if (packet.size() > NetworkEngine::MTU) {
@@ -103,9 +92,9 @@ int NetworkEngine::sendTcp(const std::string &saddr, const std::string &daddr, c
  * Sends a UDP packet with the given parameters.
  *
  * Params:
- *      const std::string &saddr: The dotted decimal string of the source address.
+ *      const std::string &saddr: The source address.
  *
- *      const std::string &daddr: The dotted decimal string of the destination address.
+ *      const std::string &daddr: The destination address.
  *
  *      const short &sport: The source port.
  *
@@ -116,25 +105,15 @@ int NetworkEngine::sendTcp(const std::string &saddr, const std::string &daddr, c
  * Returns:
  *      The number of bytes sent.
  */
-int NetworkEngine::sendUdp(const std::string &saddr, const std::string &daddr, const short &sport,
-                           const short &dport, const UCharVector &payload) {
+int NetworkEngine::sendRawUdp(const struct in_addr &saddr, const struct in_addr &daddr,
+                              const short &sport, const short &dport, const UCharVector &payload) {
     if (this->sd == -1) {
         return 0;
     }
 
     struct sockaddr_in sin;
-    struct sockaddr_in sinSrc;
-    struct sockaddr_in sinDst;
 
-    if (inet_pton(AF_INET, saddr.c_str(), &sinSrc.sin_addr) != 1) {
-        return 0;
-    }
-
-    if (inet_pton(AF_INET, daddr.c_str(), &sinDst.sin_addr) != 1) {
-        return 0;
-    }
-
-    UdpStack udpStack(sinSrc.sin_addr, sinDst.sin_addr, sport, dport, payload);
+    UdpStack udpStack(saddr, daddr, sport, dport, payload);
     UCharVector packet = udpStack.getPacket();
 
     if (packet.size() > NetworkEngine::MTU) {
@@ -224,7 +203,7 @@ void NetworkEngine::runSniff(const char *filter) {
         return;
     }
 
-    pcap_loop(this->session, 0, &gotPacket, (unsigned char *)this);
+    pcap_loop(this->session, 0, &NetworkEngine::gotPacket, (unsigned char *)this);
 
     pcap_freealldevs(allDevs);
 }
@@ -240,7 +219,8 @@ void NetworkEngine::runSniff(const char *filter) {
  *
  *      const unsigned char *packet: The network packet sniffed by pcap_loop.
  */
-void gotPacket(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet) {
+void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *header,
+                              const unsigned char *packet) {
     NetworkEngine *netEngine = (NetworkEngine *)args;
     for (int i = 0; i < netEngine->LoopCallbacks.size(); i++) {
         (netEngine->LoopCallbacks[i])(header, packet);
