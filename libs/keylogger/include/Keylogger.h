@@ -15,7 +15,7 @@ class Keylogger {
 public:
     Keylogger(std::string log_filename);
 
-    void start_logging();
+    bool start_logging();
     bool stop_logging();
 
 private:
