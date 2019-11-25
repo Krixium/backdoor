@@ -63,6 +63,8 @@ public:
 
     inline const struct in_addr *getIp() { return &(this->ip); }
 
+    inline KnockController *getKnockController() { return this->knockController; }
+
     static void gotPacket(unsigned char *args, const struct pcap_pkthdr *header,
                           const unsigned char *packet);
 

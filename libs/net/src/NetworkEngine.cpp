@@ -30,7 +30,7 @@ NetworkEngine::NetworkEngine(const char *interfaceName)
     this->getInterfaceInfo(interfaceName);
 
     this->knockController =
-        new KnockController("1111,2222,3333,4444", std::string(interfaceName), 42069, 10);
+        new KnockController("8000,8001,8002", std::string(interfaceName), 42069, 10);
 }
 
 /*

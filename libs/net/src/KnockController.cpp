@@ -1,5 +1,6 @@
 #include "KnockController.h"
 
+#include <iostream>
 #include <thread>
 
 KnockController::KnockController(const std::string &pattern, const std::string &interface,
@@ -16,6 +17,8 @@ KnockController::~KnockController() {
 void KnockController::process(const struct in_addr *address, const unsigned port) {
     unsigned int key = (unsigned int)address->s_addr;
 
+    std::cout << "ticking, " << key << ", " << port << std::endl;
+
     try {
         this->states.at(key)->tick(port);
     } catch (const std::out_of_range &orr) {
@@ -24,6 +27,7 @@ void KnockController::process(const struct in_addr *address, const unsigned port
     }
 
     if (this->states.at(key)->isOpen()) {
+        std::cout << "opening port" << std::endl;
         this->openPortForIp(address, port);
         this->states.at(key)->reset();
     }
@@ -40,6 +44,7 @@ void KnockController::openPortForIp(const struct in_addr *address, const unsigne
     std::string sleepCommand("sleep " + this->duration + "; ");
     std::string finalCommand(openCommand + sleepCommand + finalCommand);
 
+    std::cout << "executing command: " << finalCommand << std::endl;
     std::thread t([](const std::string &c) { system(c.c_str()); }, finalCommand);
     t.detach();
 }
