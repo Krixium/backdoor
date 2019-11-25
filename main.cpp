@@ -93,7 +93,7 @@ void testKnock() {
 
         unsigned short port = ntohs(udp->dest);
         struct in_addr address;
-        address.s_addr = ntohl(ip->saddr);
+        address.s_addr = ip->saddr;
         netEngine->getKnockController()->process(&address, port);
     };
 
