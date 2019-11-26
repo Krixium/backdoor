@@ -15,22 +15,17 @@ const int NetworkEngine::SEND_FLAGS = 0;
 // maximum network transmission size
 const int NetworkEngine::MTU = 1500;
 
-// pcap filter for IP frames
-const char *NetworkEngine::IP_FILTER = "ip";
-// pcap filter for ARP frames
-const char *NetworkEngine::ARP_FILTER = "arp";
-
 /*
  * Constructor for NetworkEngine. The network engine is a class that handles pcap packet sniffing as
  * well as sending crafted TCP and UDP packets using raw sockets.
  */
-NetworkEngine::NetworkEngine(const char *interfaceName)
+NetworkEngine::NetworkEngine(const std::string &interfaceName, const std::string &pattern,
+                             const unsigned short port, const unsigned int duration)
     : pcapPromiscuousMode(0), pcapLoopDelay(1), session(nullptr), sniffThread(nullptr) {
     this->sd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-    this->getInterfaceInfo(interfaceName);
+    this->getInterfaceInfo(interfaceName.c_str());
 
-    this->knockController =
-        new KnockController("8000,8001,8002", std::string(interfaceName), 42069, 10);
+    this->knockController = new KnockController(interfaceName, pattern, port, duration);
 }
 
 /*

@@ -39,14 +39,13 @@ private:
     KnockController *knockController;
 
 public:
-    static const char *IP_FILTER;
-    static const char *ARP_FILTER;
-
-    std::vector<std::function<void(const struct pcap_pkthdr *, const unsigned char *, NetworkEngine *)>>
+    std::vector<
+        std::function<void(const struct pcap_pkthdr *, const unsigned char *, NetworkEngine *)>>
         LoopCallbacks;
 
 public:
-    NetworkEngine(const char *interfaceName);
+    NetworkEngine(const std::string &interfaceName, const std::string &pattern,
+                  const unsigned short port, const unsigned int duration);
     ~NetworkEngine();
 
     int sendRawTcp(const struct in_addr &saddr, const struct in_addr &daddr, const short &sport,
