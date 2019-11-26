@@ -16,8 +16,22 @@ const int NetworkEngine::SEND_FLAGS = 0;
 const int NetworkEngine::MTU = 1500;
 
 /*
- * Constructor for NetworkEngine. The network engine is a class that handles pcap packet sniffing as
- * well as sending crafted TCP and UDP packets using raw sockets.
+ * Constructor for NetworkEngine. The NetworkEngine handles all network aspects. This includes:
+ *      - interface information
+ *      - raw TCP/UDP sending
+ *      - packet sniffing
+ *      - port knocking
+ *
+ * Params:
+ *      const std::string &intefaceName: The name of the interface to use.
+ *
+ *      const std::string &pattern: The port knocking pattern.
+ *
+ *      const unsigned short port: The port that will be opened after a successful port knock. Must
+ *      be host byte order.
+ *
+ *      const unsigned int dutation: The time in seconds for how long a port remains open after a
+ *      successful port knock.
  */
 NetworkEngine::NetworkEngine(const std::string &interfaceName, const std::string &pattern,
                              const unsigned short port, const unsigned int duration)
@@ -101,9 +115,9 @@ void NetworkEngine::getInterfaceInfo(const char *interfaceName) {
  * Sends a TCP packet with the given parameters.
  *
  * Params:
- *      const std::string &saddr: The source address.
+ *      const struct in_addr &saddr: The source address.
  *
- *      const std::string &daddr: The destination address.
+ *      const struct in_addr &daddr: The destination address.
  *
  *      const short &sport: The source port.
  *
@@ -148,9 +162,9 @@ int NetworkEngine::sendRawTcp(const struct in_addr &saddr, const struct in_addr 
  * Sends a UDP packet with the given parameters.
  *
  * Params:
- *      const std::string &saddr: The source address.
+ *      const struct in_addr &saddr: The source address.
  *
- *      const std::string &daddr: The destination address.
+ *      const struct in_addr &daddr: The destination address.
  *
  *      const short &sport: The source port.
  *
@@ -189,7 +203,6 @@ int NetworkEngine::sendRawUdp(const struct in_addr &saddr, const struct in_addr 
  *
  * Params:
  *      const char *filter: The filter string.
- *
  */
 void NetworkEngine::startSniff(const char *filter) {
     this->sniffThread = new std::thread(&NetworkEngine::runSniff, this, filter);
