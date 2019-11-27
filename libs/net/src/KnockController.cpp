@@ -1,5 +1,7 @@
 #include "KnockController.h"
 
+#include <iostream>
+#include <sstream>
 #include <thread>
 
 /*
@@ -21,8 +23,10 @@
  */
 KnockController::KnockController(const std::string &interfaceName, const std::string &pattern,
                                  const unsigned short port, const unsigned int duration)
-    : interface(interface), pattern(pattern), portString(std::to_string(port)),
-      duration(std::to_string(duration)), states() {}
+    : interface(interface), portString(std::to_string(port)), duration(std::to_string(duration)),
+      states() {
+    KnockController::parsePattern(pattern, &this->pattern);
+}
 
 /*
  * The deconstructor for the KnockController. Cleans up memory.
@@ -66,7 +70,8 @@ void KnockController::process(const struct in_addr *address, const unsigned port
  * Creates a set of iptable rules to open up the port for the given address for a set duration.
  *
  * Params:
- *      const struct in_addr *address: The address to open up the firewall for. Must be network byte order.
+ *      const struct in_addr *address: The address to open up the firewall for. Must be network byte
+ * order.
  */
 void KnockController::openPortForIp(const struct in_addr *address) {
     std::string dottedDecimalString(inet_ntoa(*address));
@@ -77,4 +82,22 @@ void KnockController::openPortForIp(const struct in_addr *address) {
 
     std::thread t([](const std::string &c) { system(c.c_str()); }, command);
     t.detach();
+}
+
+int KnockController::parsePattern(const std::string &pattern, std::vector<unsigned short> *out) {
+    int i = 0;
+    std::istringstream iss(pattern);
+
+    out->clear();
+    for (std::string tmp; std::getline(iss, tmp, ',');) {
+        try {
+            unsigned short num = std::stoi(tmp);
+            out->push_back(num);
+            i++;
+        } catch (const std::invalid_argument &ia) {
+            std::cerr << "Invalid argument in KnockState constructor: " << ia.what() << std::endl;
+        }
+    }
+
+    return i;
 }

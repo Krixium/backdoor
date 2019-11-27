@@ -54,6 +54,14 @@ public:
     int sendRawUdp(const struct in_addr &saddr, const struct in_addr &daddr, const short &sport,
                    const short &dport, const UCharVector &payload);
 
+    int sendCookedTcp(const struct in_addr &daddr, const unsigned short dport,
+                      const UCharVector &data);
+
+    int sendCoockedUdp(const struct in_addr &daddr, const unsigned short dport,
+                       const UCharVector &data);
+
+    int knockAndSend(const in_addr &daddr, const UCharVector &data);
+
     void startSniff(const char *filter);
 
     void stopSniff();

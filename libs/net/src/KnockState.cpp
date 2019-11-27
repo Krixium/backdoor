@@ -1,28 +1,13 @@
 #include "KnockState.h"
 
-#include <iostream>
-#include <sstream>
-#include <string>
-
 /*
  * The constructor for the KnockState. The KnockState keeps track of what part of the knock sequence
  * any host is currently on.
  *
  * Params:
- *      const std::string& pattern: The port sequence that will be used as the knock pattern.
+ *      const std::vector<unsigned short>& pattern: The port sequence that will be used as the knock pattern.
  */
-KnockState::KnockState(const std::string& pattern) : currentIndex(0) {
-    std::istringstream iss(pattern);
-
-    for (std::string tmp; std::getline(iss, tmp, ',');) {
-        try {
-            unsigned short num = std::stoi(tmp);
-            this->state.push_back(num);
-        } catch (const std::invalid_argument& ia) {
-            std::cerr << "Invalid argument in KnockState constructor: " << ia.what() << std::endl;
-        }
-    }
-}
+KnockState::KnockState(const std::vector<unsigned short>& pattern) : currentIndex(0), pattern(pattern) {}
 
 /*
  * Attempts to increment the state or "tick" the state of the knock sequence. The internal state of
@@ -32,7 +17,7 @@ KnockState::KnockState(const std::string& pattern) : currentIndex(0) {
  *      const unsigned short port: The port from the incoming packet.
  */
 void KnockState::tick(const unsigned short port) {
-    if (this->state[currentIndex] == port) {
+    if (this->pattern[currentIndex] == port) {
         currentIndex++;
     }
 }
@@ -44,7 +29,7 @@ void KnockState::tick(const unsigned short port) {
  * Returns:
  *      True if the state is open, false if the state is closed.
  */
-bool KnockState::isOpen() { return currentIndex == this->state.size(); }
+bool KnockState::isOpen() { return currentIndex == this->pattern.size(); }
 
 /*
  * Resets the state back to the default state or starting state.

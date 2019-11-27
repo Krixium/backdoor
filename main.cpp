@@ -85,26 +85,8 @@ void testNet() {
 
 void testKnock() {
     NetworkEngine netEngine(interfaceName, knockPattern, knockPort, knockDuration);
-    char *dottedDecimalString = inet_ntoa(*netEngine.getIp());
-    // std::string pcapFilter("ip and udp and dst host " + std::string(dottedDecimalString));
-    std::string pcapFilter("ip and udp");
-
-    auto knockTest = [](const pcap_pkthdr *header, const unsigned char *payload,
-                        NetworkEngine *netEngine) -> void {
-        struct ethhdr *eth = (struct ethhdr *)payload;
-        struct iphdr *ip = (struct iphdr *)(payload + ETH_HLEN);
-        struct udphdr *udp = (struct udphdr *)(payload + ETH_HLEN + (ip->ihl * 4));
-
-        unsigned short port = ntohs(udp->dest);
-        struct in_addr address;
-        address.s_addr = ip->saddr;
-        netEngine->getKnockController()->process(&address, port);
-    };
-
-    netEngine.LoopCallbacks.push_back(knockTest);
-
-    netEngine.startSniff(pcapFilter.c_str());
-    sleep(20);
+    netEngine.startSniff("ip and udp");
+    netEngine.knockAndSend(*netEngine.getIp(), data);
     netEngine.stopSniff();
 }
 

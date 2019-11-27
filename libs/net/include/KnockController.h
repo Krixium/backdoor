@@ -1,6 +1,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <arpa/inet.h>
 
@@ -9,9 +10,9 @@
 class KnockController {
 private:
     std::string interface;
-    std::string pattern;
     std::string portString;
     std::string duration;
+    std::vector<unsigned short> pattern;
     std::unordered_map<unsigned int, KnockState*> states;
 
 public:
@@ -19,6 +20,12 @@ public:
     ~KnockController();
 
     void process(const struct in_addr* address, const unsigned port);
+
+    inline const std::vector<unsigned short> &getPattern() { return this->pattern; };
+
+    inline const unsigned short getPort() { return std::stoi(this->portString); }
+
+    static int parsePattern(const std::string &pattern, std::vector<unsigned short> *out);
 
 private:
     void openPortForIp(const struct in_addr* address);

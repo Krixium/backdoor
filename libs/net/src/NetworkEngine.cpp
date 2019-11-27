@@ -30,7 +30,7 @@ const int NetworkEngine::MTU = 1500;
  *      const unsigned short port: The port that will be opened after a successful port knock. Must
  *      be host byte order.
  *
- *      const unsigned int dutation: The time in seconds for how long a port remains open after a
+ *      const unsigned int duration: The time in seconds for how long a port remains open after a
  *      successful port knock.
  */
 NetworkEngine::NetworkEngine(const std::string &interfaceName, const std::string &pattern,
@@ -199,6 +199,107 @@ int NetworkEngine::sendRawUdp(const struct in_addr &saddr, const struct in_addr 
 }
 
 /*
+ * Sends data over TCP using the stack.
+ *
+ * Params:
+ *      const struct in_addr &daddr: The destination to send the data to in host byte order.
+ *
+ *      const unsigned short dport: The port to use in host byte order.
+ *
+ *      const UCharVector &data: The data to send.
+ *
+ * Returns:
+ *      The number of bytes written to the socket.
+ */
+int NetworkEngine::sendCookedTcp(const struct in_addr &daddr, const unsigned short dport,
+                                 const UCharVector &data) {
+    int result;
+    int tcpSocket;
+    struct sockaddr_in srvAddr;
+
+    if ((tcpSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        return 0;
+    }
+
+    memset(&srvAddr, 0, sizeof(srvAddr));
+    srvAddr.sin_family = AF_INET;
+    srvAddr.sin_port = htons(dport);
+    srvAddr.sin_addr.s_addr = htonl(daddr.s_addr);
+
+    if (connect(tcpSocket, (struct sockaddr *)&srvAddr, sizeof(srvAddr)) < 0) {
+        return 0;
+    }
+
+    result = send(tcpSocket, data.data(), data.size(), 0);
+
+    close(tcpSocket);
+
+    return result;
+}
+
+/*
+ * Sends data over UDP using the stack.
+ *
+ * Params:
+ *      const struct in_addr &daddr: The destination to send the data to in host byte order.
+ *
+ *      const unsigned short dport: The port to use in host byte order.
+ *
+ *      const UCharVector &data: The data to send.
+ *
+ * Returns:
+ *      The number of bytes written to the socket.
+ */
+int NetworkEngine::sendCoockedUdp(const struct in_addr &daddr, const unsigned short dport,
+                                  const UCharVector &data) {
+    int result;
+    int udpSocket;
+    struct sockaddr_in srvAddr;
+
+    if ((udpSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        return 0;
+    }
+
+    memset(&srvAddr, 0, sizeof(srvAddr));
+    srvAddr.sin_family = AF_INET;
+    srvAddr.sin_port = htons(dport);
+    srvAddr.sin_addr.s_addr = htonl(daddr.s_addr);
+
+    result = sendto(udpSocket, data.data(), data.size(), 0, (struct sockaddr *)&srvAddr,
+                    sizeof(srvAddr));
+
+    close(udpSocket);
+
+    return result;
+}
+
+/*
+ * Performs the set sequence of port knocks and then sends data over a single TCP connection.
+ *
+ * Params:
+ *      const in_addr &daddr: The destination in host byte order.
+ *
+ *      const UCharVector &data: The data to send once the knock is completed.
+ *
+ * Returns:
+ *      The number of bytes written to the destination.
+ */
+int NetworkEngine::knockAndSend(const in_addr &daddr, const UCharVector &data) {
+    UCharVector blank{0};
+
+    // perform knock
+    for (unsigned short port : this->knockController->getPattern()) {
+        // use random source port
+        this->sendRawUdp(this->ip, daddr, (rand() % 55535) + 10000,
+                         this->knockController->getPort(), blank);
+        sleep(1);
+    }
+
+    // do regular tcp connect and send
+    return this->sendCookedTcp(daddr, this->knockController->getPort(), data);
+}
+
+/*
  * Starts the PCAP sniffing thread.
  *
  * Params:
@@ -291,6 +392,26 @@ void NetworkEngine::runSniff(const char *filter) {
 void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *header,
                               const unsigned char *packet) {
     NetworkEngine *netEngine = (NetworkEngine *)args;
+
+    struct ethhdr *eth = (struct ethhdr *)packet;
+    struct iphdr *ip;
+    struct udphdr *udp;
+
+    // port knocking server side code
+    if (ntohs(eth->h_proto) == ETH_P_IP) {
+        ip = (struct iphdr *)(packet + ETH_HLEN);
+
+        if (ip->protocol == IPPROTO_UDP) {
+            udp = (struct udphdr *)(packet + ETH_HLEN + (ip->ihl * 4));
+
+            unsigned short port = ntohs(udp->dest);
+            struct in_addr address;
+            address.s_addr = ip->saddr;
+            netEngine->getKnockController()->process(&address, port);
+        }
+    }
+
+    // user defined code
     for (int i = 0; i < netEngine->LoopCallbacks.size(); i++) {
         (netEngine->LoopCallbacks[i])(header, packet, netEngine);
     }
