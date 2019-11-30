@@ -2,7 +2,7 @@
 
 #include <string>
 
-unsigned short Authenticator::generateSignature(const unsigned short value) {
+unsigned short authenticator::generateSignature(const unsigned short value) {
     SHA256_CTX ctx;
     std::string valueString;
     unsigned char hashBuffer[32];
@@ -21,6 +21,6 @@ unsigned short Authenticator::generateSignature(const unsigned short value) {
     return result;
 }
 
-bool Authenticator::isValidSignature(const unsigned short n, const unsigned short m) {
-    return m == this->generateSignature(n);
+bool authenticator::isValidSignature(const unsigned short n, const unsigned short m) {
+    return m == authenticator::generateSignature(n);
 }

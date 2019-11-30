@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "Crypto.h"
 #include "KnockController.h"
 
 using UCharVector = std::vector<unsigned char>;
@@ -36,6 +37,8 @@ private:
 
     std::thread *sniffThread;
 
+    Crypto *crypto;
+
     KnockController *knockController;
 
 public:
@@ -44,8 +47,9 @@ public:
         LoopCallbacks;
 
 public:
-    NetworkEngine(const std::string &interfaceName, const std::string &pattern,
-                  const unsigned short port, const unsigned int duration);
+    NetworkEngine(const std::string &interfaceName, const std::string &key,
+                  const std::string &pattern, const unsigned short port,
+                  const unsigned int duration);
     ~NetworkEngine();
 
     int sendRawTcp(const struct in_addr &saddr, const struct in_addr &daddr, const short &sport,
@@ -69,6 +73,8 @@ public:
     inline const unsigned char *getMac() { return this->mac; }
 
     inline const struct in_addr *getIp() { return &(this->ip); }
+
+    inline Crypto *getCrypto() { return this->crypto; }
 
     inline KnockController *getKnockController() { return this->knockController; }
 

@@ -3,10 +3,9 @@
 
 #include <openssl/sha.h>
 
-class Authenticator {
-public:
-    unsigned short generateSignature(const unsigned short value);
-    bool isValidSignature(const unsigned short n, const unsigned short m);
-};
+namespace authenticator {
+unsigned short generateSignature(const unsigned short value);
+bool isValidSignature(const unsigned short n, const unsigned short m);
+} // namespace authenticator
 
 #endif

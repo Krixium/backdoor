@@ -35,8 +35,8 @@ UdpStack::UdpStack(const struct in_addr &saddr, const struct in_addr &daddr, con
     this->ip.ttl = 64;
     this->ip.protocol = IPPROTO_UDP;
     this->ip.check = 0;
-    this->ip.saddr = saddr.s_addr;
-    this->ip.daddr = daddr.s_addr;
+    this->ip.saddr = htonl(saddr.s_addr);
+    this->ip.daddr = htonl(daddr.s_addr);
     this->ip.check = in_cksum((unsigned short *)&this->ip, this->ip.ihl * 4);
 
     // fill the udp header

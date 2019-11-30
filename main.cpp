@@ -4,16 +4,17 @@
 
 #include <unistd.h>
 
+#include "Crypto.h"
 #include "NetworkEngine.h"
 #include "TcpStack.h"
 #include "UdpStack.h"
 #include "authenticator.h"
-#include "crypto.h"
 
 #include "Keylogger.h"
 
 const std::string interfaceName("wlp59s0");
 const std::string knockPattern("8000,8001,8002");
+const std::string key("key");
 
 const unsigned short knockPort = 42069;
 const unsigned int knockDuration = 5;
@@ -24,10 +25,8 @@ const short dport = 7575;
 UCharVector data({'a', 'b', 'c', 'd', 'e'});
 
 void testAuth() {
-    Authenticator auth;
-
-    std::cout << auth.generateSignature(sport) << std::endl;
-    std::cout << auth.generateSignature(dport) << std::endl;
+    std::cout << authenticator::generateSignature(sport) << std::endl;
+    std::cout << authenticator::generateSignature(dport) << std::endl;
 }
 
 void testCrypto() {
@@ -48,7 +47,7 @@ void testNet() {
     srcAddr.s_addr = 0xDEADBEEF;
     dstAddr.s_addr = 0xEFBEADDE;
 
-    NetworkEngine netEngine(interfaceName, knockPattern, knockPort, knockDuration);
+    NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
 
     // tcp sending examples
     for (int i = 0; i < 10; i++) {
@@ -84,7 +83,7 @@ void testNet() {
 }
 
 void testKnock() {
-    NetworkEngine netEngine(interfaceName, knockPattern, knockPort, knockDuration);
+    NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
     netEngine.startSniff("ip and udp");
     netEngine.knockAndSend(*netEngine.getIp(), data);
     netEngine.stopSniff();

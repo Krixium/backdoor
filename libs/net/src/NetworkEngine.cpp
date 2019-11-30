@@ -25,6 +25,8 @@ const int NetworkEngine::MTU = 1500;
  * Params:
  *      const std::string &intefaceName: The name of the interface to use.
  *
+ *      const std::string &key: The crypto key.
+ *
  *      const std::string &pattern: The port knocking pattern.
  *
  *      const unsigned short port: The port that will be opened after a successful port knock. Must
@@ -33,12 +35,14 @@ const int NetworkEngine::MTU = 1500;
  *      const unsigned int duration: The time in seconds for how long a port remains open after a
  *      successful port knock.
  */
-NetworkEngine::NetworkEngine(const std::string &interfaceName, const std::string &pattern,
-                             const unsigned short port, const unsigned int duration)
+NetworkEngine::NetworkEngine(const std::string &interfaceName, const std::string &key,
+                             const std::string &pattern, const unsigned short port,
+                             const unsigned int duration)
     : pcapPromiscuousMode(0), pcapLoopDelay(1), session(nullptr), sniffThread(nullptr) {
     this->sd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     this->getInterfaceInfo(interfaceName.c_str());
 
+    this->crypto = new Crypto(key);
     this->knockController = new KnockController(interfaceName, pattern, port, duration);
 }
 
@@ -52,6 +56,7 @@ NetworkEngine::~NetworkEngine() {
 
     this->stopSniff();
 
+    delete this->crypto;
     delete this->knockController;
 }
 
