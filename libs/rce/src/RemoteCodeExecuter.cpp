@@ -45,6 +45,20 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
 
     std::cout << "got packet" << std::endl;
 
+    // is it from same machine?
+    const unsigned char *thisMac = net->getMac();
+    int i;
+    for (i = 0; i < ETH_ALEN; i++)
+    {
+        if (eth->h_source[i] != thisMac[i]) {
+            break;
+        }
+    }
+    if (i == ETH_ALEN) {
+        std::cout << "\tfrom this machine" << std::endl;
+        return;
+    }
+
     // is it ip?
     if (ntohs(eth->h_proto) != ETH_P_IP) {
         std::cout << "\tnot ip" << std::endl;
