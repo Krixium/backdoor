@@ -100,7 +100,7 @@ void testRce() {
     netEngine.startSniff("ip and tcp");
 
     sleep(1);
-    RemoteCodeExecuter::sendCommand(&netEngine, daddr, "ls -al");
+    RemoteCodeExecuter::sendCommand(&netEngine, daddr, "ifconfig");
 
     sleep(30);
     netEngine.stopSniff();

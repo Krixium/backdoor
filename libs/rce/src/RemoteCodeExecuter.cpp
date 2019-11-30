@@ -53,20 +53,17 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
         }
     }
     if (i == ETH_ALEN) {
-        std::cout << "same host" << std::endl;
         return;
     }
 
     // is it ip?
     if (ntohs(eth->h_proto) != ETH_P_IP) {
-        std::cout << "not ip" << std::endl;
         return;
     }
 
     // is it tcp?
     ip = (struct iphdr *)(packet + ETH_HLEN);
     if (ip->protocol != IPPROTO_TCP) {
-        std::cout << "not tcp" << std::endl;
         return;
     }
 
@@ -74,7 +71,6 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
 
     // is it authenticated?
     if (!authenticator::isValidSignature(ntohs(tcp->source), ntohs(tcp->dest))) {
-        std::cout << "not auth" << std::endl;
         return;
     }
 
@@ -98,8 +94,8 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     }
 
     // if it is a response print it
-    if ((tmp = getResponse((char *)payload)) != nullptr) {
-        std::cout << tmp << std::endl;
+    if ((tmp = getResponse((char *)plaintext.data())) != nullptr) {
+        std::cout << tmp;
     }
 }
 
