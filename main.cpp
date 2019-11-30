@@ -90,7 +90,6 @@ void testKnock() {
     netEngine.stopSniff();
 }
 
-/*
 void testRceMaster() {
     struct in_addr daddr;
     daddr.s_addr = 0xc0a80012;
@@ -109,7 +108,6 @@ void testRceSlave() {
     sleep(30);
     netEngine.stopSniff();
 }
-*/
 
 int main(int argc, char *argv[]) {
 

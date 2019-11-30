@@ -9,6 +9,11 @@
 #include "TcpStack.h"
 #include "authenticator.h"
 
+const char *CMD_START_STR = "s-start[";
+const char *CMD_STOP_STR = "]s-end";
+const char *DATA_START_STR = "d-start[";
+const char *DATA_STOP_STR = "]d-end";
+
 int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr daddr,
                                     const std::string &cmd) {
     unsigned short sport;
