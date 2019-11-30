@@ -156,7 +156,9 @@ void RemoteCodeExecuter::executeCommand(NetworkEngine *net, const unsigned int d
         sport = (rand() % 55535) + 10000;
         dport = authenticator::generateSignature(sport);
 
-        std::string res(lineBuffer);
+        std::string res(DATA_START_STR);
+        res += lineBuffer;
+        res += DATA_STOP_STR;
         UCharVector resVec(res.begin(), res.end());
 
         // encrypt
