@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     // testKeylogger();
     // testNet();
     // testKnock();
-    testRceMaster();
+    testRceSlave();
 
     return 0;
 }

