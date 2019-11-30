@@ -9,10 +9,10 @@
 #include "TcpStack.h"
 #include "authenticator.h"
 
-static const char *CMD_START_STR = "s-start[";
-static const char *CMD_STOP_STR = "]s-end";
-static const char *DATA_START_STR = "d-start[";
-static const char *DATA_STOP_STR = "]d-end";
+#define CMD_START_STR "s-start["
+#define CMD_STOP_STR "]s-end"
+#define DATA_START_STR "d-start["
+#define DATA_STOP_STR "]d-end"
 
 int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr daddr,
                                     const std::string &cmd) {
@@ -34,8 +34,7 @@ int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr dad
     UCharVector ciphertext = net->getCrypto()->enc(payload);
 
     // send
-    return net->sendRawTcp(*net->getIp(), daddr, sport, dport, TcpStack::SYN_FLAG,
-                                 ciphertext);
+    return net->sendRawTcp(*net->getIp(), daddr, sport, dport, TcpStack::SYN_FLAG, ciphertext);
 }
 
 void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned char *packet,
