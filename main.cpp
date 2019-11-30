@@ -96,10 +96,11 @@ void testRce() {
 
     NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
 
-    RemoteCodeExecuter::sendCommand(&netEngine, daddr, "ls -al");
-
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
     netEngine.startSniff("ip and tcp");
+
+    RemoteCodeExecuter::sendCommand(&netEngine, daddr, "ls -al");
+
     sleep(30);
     netEngine.stopSniff();
 }
