@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Crypto.h"
 #include "checksum.h"
 
 // The size of a UDP header
@@ -30,7 +31,7 @@ UdpStack::UdpStack(const struct in_addr &saddr, const struct in_addr &daddr, con
     this->ip.ihl = 5;
     this->ip.version = 4;
     this->ip.tos = 0;
-    this->ip.id = (int)(244.0 * rand() / (RAND_MAX + 1.0));
+    this->ip.id = (int)(Crypto::rand() % 0xFFFF);
     this->ip.frag_off = 0;
     this->ip.ttl = 64;
     this->ip.protocol = IPPROTO_UDP;

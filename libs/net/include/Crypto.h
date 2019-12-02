@@ -16,6 +16,8 @@ public:
 
     UCharVector enc(const UCharVector &data);
     UCharVector dec(const UCharVector &data);
+
+    static unsigned int rand();
 };
 
 #endif

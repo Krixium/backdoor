@@ -129,6 +129,10 @@ void NetworkEngine::getInterfaceInfo(const char *interfaceName) {
  *
  *      const short &dport: The destination port.
  *
+ *      const unsigned int seq: The sequence number.
+ *
+ *      const unsigned int ack: The ack number.
+ *
  *      const unsigned char &tcpFlags: The TCP flags to use.
  *
  *      const UCharVector &payload: The TCP payload.
@@ -137,7 +141,8 @@ void NetworkEngine::getInterfaceInfo(const char *interfaceName) {
  *      The number of bytes sent.
  */
 int NetworkEngine::sendRawTcp(const struct in_addr &saddr, const struct in_addr &daddr,
-                              const short &sport, const short &dport, const unsigned char &tcpFlags,
+                              const short &sport, const short &dport, const unsigned int seq,
+                              const unsigned int ack, const unsigned char &tcpFlags,
                               const UCharVector &payload) {
     if (this->sd == -1) {
         return 0;
@@ -145,11 +150,7 @@ int NetworkEngine::sendRawTcp(const struct in_addr &saddr, const struct in_addr 
 
     struct sockaddr_in sin;
 
-    srand(time(NULL));
-    unsigned int seq_num = rand() % 0xFFFFFFFF;
-    unsigned int ack_num = rand() % 0xFFFFFFFF;
-
-    TcpStack tcpStack(saddr, daddr, sport, dport, seq_num, ack_num, tcpFlags, payload);
+    TcpStack tcpStack(saddr, daddr, sport, dport, seq, ack, tcpFlags, payload);
     UCharVector packet = tcpStack.getPacket();
 
     if (packet.size() > NetworkEngine::MTU) {
@@ -296,7 +297,7 @@ int NetworkEngine::knockAndSend(const in_addr &daddr, const UCharVector &data) {
     // perform knock
     for (unsigned short port : this->knockController->getPattern()) {
         // use random source port
-        this->sendRawUdp(this->ip, daddr, (rand() % 55535) + 10000,
+        this->sendRawUdp(this->ip, daddr, (Crypto::rand() % 55535) + 10000,
                          this->knockController->getPort(), blank);
         sleep(1);
     }
@@ -404,10 +405,10 @@ void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *hea
     struct udphdr *udp;
 
     // port knocking server side code
-    if (ntohs(eth->h_proto) == ETH_P_IP) {
+    if (netEngine->isIp(eth)) {
         ip = (struct iphdr *)(packet + ETH_HLEN);
 
-        if (ip->protocol == IPPROTO_UDP) {
+        if (netEngine->isUdp(ip)) {
             udp = (struct udphdr *)(packet + ETH_HLEN + (ip->ihl * 4));
 
             unsigned short port = ntohs(udp->dest);
