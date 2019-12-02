@@ -418,7 +418,6 @@ void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *hea
         }
     }
 
-    // user defined code
     for (int i = 0; i < netEngine->LoopCallbacks.size(); i++) {
         (netEngine->LoopCallbacks[i])(header, packet, netEngine);
     }
