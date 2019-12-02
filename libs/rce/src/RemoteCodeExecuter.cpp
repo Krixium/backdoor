@@ -87,7 +87,8 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     if (tcp->syn && tcp->ece) {
         // convert the sequence number to a null terminated string and print it
         char seqBuffer[5];
-        memcpy(seqBuffer, (unsigned char *)&tcp->seq, 4);
+        unsigned int seqNum = ntohl(tcp->seq);
+        memcpy(seqBuffer, (unsigned char *)&seqNum, 4);
         seqBuffer[4] = 0;
         std::cout << seqBuffer << std::endl;
     }
