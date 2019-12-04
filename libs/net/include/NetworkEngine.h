@@ -70,9 +70,11 @@ public:
 
     int knockAndSend(const in_addr &daddr, const UCharVector &data);
 
-    void startSniff(const char *filter);
+    void startSyncSniff(const char *filter);
 
-    void stopSniff();
+    void startAsyncSniff(const char *filter);
+
+    void stopAsyncSniff();
 
     inline const unsigned char *getMac() { return this->mac; }
 

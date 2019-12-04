@@ -23,8 +23,10 @@
  */
 KnockController::KnockController(const std::string &interfaceName, const std::string &pattern,
                                  const unsigned short port, const unsigned int duration)
-    : interface(interface), portString(std::to_string(port)), duration(std::to_string(duration)),
-      states() {
+    : states() {
+    this->interface = interface;
+    this->portString = std::to_string(port);
+    this->duration = std::to_string(duration);
     KnockController::parsePattern(pattern, &this->pattern);
 }
 

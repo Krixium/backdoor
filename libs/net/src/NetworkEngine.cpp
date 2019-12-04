@@ -54,7 +54,7 @@ NetworkEngine::~NetworkEngine() {
         close(this->sd);
     }
 
-    this->stopSniff();
+    this->stopAsyncSniff();
 
     delete this->crypto;
     delete this->knockController;
@@ -306,20 +306,24 @@ int NetworkEngine::knockAndSend(const in_addr &daddr, const UCharVector &data) {
     return this->sendCookedTcp(daddr, this->knockController->getPort(), data);
 }
 
+void NetworkEngine::startSyncSniff(const char *filter) {
+    this->runSniff(filter);
+}
+
 /*
  * Starts the PCAP sniffing thread.
  *
  * Params:
  *      const char *filter: The filter string.
  */
-void NetworkEngine::startSniff(const char *filter) {
+void NetworkEngine::startAsyncSniff(const char *filter) {
     this->sniffThread = new std::thread(&NetworkEngine::runSniff, this, filter);
 }
 
 /*
  * Stops the PCAP sniff loop.
  */
-void NetworkEngine::stopSniff() {
+void NetworkEngine::stopAsyncSniff() {
     if (this->sniffThread != nullptr) {
         pcap_breakloop(this->session);
         if (this->sniffThread->joinable()) {

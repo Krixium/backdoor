@@ -9,6 +9,12 @@
 
 using Properties = std::unordered_map<std::string, std::string>;
 
+void printUsage(const char *name);
+
 Properties getConfig(const std::string& filename);
+
+int clientMode(const Properties &p);
+
+int serverMode(const Properties &p);
 
 #endif
