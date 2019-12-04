@@ -194,4 +194,29 @@ int clientMode(const Properties &p) {
  * Return:
  *      The exit code for the application.
  */
-int serverMode(const Properties &p) { return 0; }
+int serverMode(const Properties &p) {
+    std::string line;
+
+    const std::string &interface = p.at("interface");
+    const std::string &key = p.at("key");
+
+    const std::string &knockPattern = p.at("knockPattern");
+    unsigned short knockPort = std::stoi(p.at("knockPort"));
+    unsigned int knockDuration = std::stoi(p.at("knockDuration"));
+
+    NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
+    netEngine.startAsyncSniff("ip");
+
+    while (true) {
+        std::cout << "server: ";
+        std::getline(std::cin, line);
+
+        if (line == "quit") {
+            break;
+        }
+
+        // implement some sort of command logic here
+    }
+
+    return 0;
+}
