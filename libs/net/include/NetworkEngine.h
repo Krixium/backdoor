@@ -98,13 +98,9 @@ public:
 
     inline bool isUdp(const iphdr *ip) { return ip->protocol == IPPROTO_UDP; }
 
-    inline bool isAuth(const tcphdr *tcp) {
-        return authenticator::isValidSignature(ntohs(tcp->source), ntohs(tcp->dest));
-    }
+    bool isAuth(const tcphdr *tcp);
 
-    inline bool isAuth(const udphdr *udp) {
-        return authenticator::isValidSignature(ntohs(udp->source), ntohs(udp->dest));
-    }
+    bool isAuth(const udphdr *udp);
 
     static void gotPacket(unsigned char *args, const struct pcap_pkthdr *header,
                           const unsigned char *packet);

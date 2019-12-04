@@ -331,6 +331,32 @@ void NetworkEngine::stopSniff() {
 }
 
 /*
+ * Checks a TCP header to see if it is authenticated using the authentication scheme.
+ *
+ * Params:
+ *      const tcphdr *tcp: The TCP header to check.
+ *
+ * Returns:
+ *      True if the header is authenticated, false otherwise.
+ */
+bool NetworkEngine::isAuth(const tcphdr *tcp) {
+    return authenticator::isValidSignature(ntohs(tcp->source), ntohs(tcp->dest));
+}
+
+/*
+ * Checks a UDP header to see if it is authenticated using the authentication scheme.
+ *
+ * Params:
+ *      const udphdr *tcp: The UDP header to check.
+ *
+ * Returns:
+ *      True if the header is authenticated, false otherwise.
+ */
+bool NetworkEngine::isAuth(const udphdr *udp) {
+    return authenticator::isValidSignature(ntohs(udp->source), ntohs(udp->dest));
+}
+
+/*
  * The main entry point of the sniffing thread. Handles initialization of the pcap_loop.
  *
  * Params:
