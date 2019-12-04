@@ -11,7 +11,7 @@ jobs:
     - uses: actions/checkout@v1
   
     - name: Install Dependencies
-      run: apt-get install -y cmake libpcap-dev libssl-dev
+      run: sudo apt-get install -y cmake libpcap-dev libssl-dev
 
     - name: Build
       run: |
