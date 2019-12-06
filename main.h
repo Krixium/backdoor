@@ -31,4 +31,6 @@ int clientMode(const Properties &p);
 
 int serverMode(const Properties &p);
 
+int maskProcess(char *original, const char *mask);
+
 #endif

