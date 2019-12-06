@@ -29,11 +29,6 @@
         ip - The dotted decimal ip of the compromised host.
         command - The unix command to execute on the remote host.
 
-    keylog [ip]
-        Starts a keylogger on a compromised host.
-
-        ip - The dotted decimal ip of the compromised host.
-
     get [ip] [file]
         Exfiltrates a file from a compromised host.
 

