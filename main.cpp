@@ -248,6 +248,7 @@ int serverMode(const Properties &p) {
         }
 
         // format: keylog [ip]
+        // Delete if not necessary
         if (tokens[0] == "keylog") {
             // Tell the victim machine to start the keylogger
         }
