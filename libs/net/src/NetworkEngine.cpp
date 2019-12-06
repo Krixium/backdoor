@@ -435,12 +435,10 @@ void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *hea
     struct udphdr *udp;
 
     // port knocking server side code
-    if (netEngine->isIp(eth)) {
+    if (!netEngine->isFromThisMachine(eth) && netEngine->isIp(eth)) {
         ip = (struct iphdr *)(packet + ETH_HLEN);
-
         if (netEngine->isUdp(ip)) {
             udp = (struct udphdr *)(packet + ETH_HLEN + (ip->ihl * 4));
-
             unsigned short port = ntohs(udp->dest);
             struct in_addr address;
             address.s_addr = ip->saddr;
