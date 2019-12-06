@@ -298,7 +298,7 @@ int NetworkEngine::knockAndSend(const in_addr &daddr, const UCharVector &data) {
     for (unsigned short port : this->knockController->getPattern()) {
         // use random source port
         this->sendRawUdp(this->ip, daddr, (Crypto::rand() % 55535) + 10000,
-                         this->knockController->getPort(), blank);
+                         port, blank);
         sleep(1);
     }
 
