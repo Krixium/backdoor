@@ -27,7 +27,7 @@ inline std::vector<std::string> tokenizeString(std::string s) {
     return output;
 }
 
-int clientMode(const Properties &p);
+int clientMode(const Properties &p, char *programName);
 
 int serverMode(const Properties &p);
 
