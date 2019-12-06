@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <string>
+#include <thread>
 
 class Keylogger {
 public:
@@ -21,7 +22,7 @@ public:
 private:
     void process_keys();
     std::string get_keyboard_path();
-
+    
     std::string m_keyboard_path;
     std::string m_log_filename;
     int m_keyboard_fd;
