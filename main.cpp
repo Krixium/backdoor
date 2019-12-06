@@ -294,14 +294,6 @@ int serverMode(const Properties &p) {
 
         // format: get [ip] [file]
         if (tokens[0] == "get") {
-            // convert and check ip
-            if (!inet_aton(tokens[1].c_str(), &daddr)) {
-                std::cerr << "server: Invalid destination host" << std::endl;
-                break;
-            }
-            daddr.s_addr = ntohl(daddr.s_addr);
-
-            netEngine.knockAndSend(daddr, data);
         }
 
         sleep(1);
