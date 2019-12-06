@@ -214,7 +214,12 @@ int serverMode(const Properties &p) {
     running = true;
     while (running) {
         std::cout << "server: ";
-        std::cin >> line;
+
+        if (!std::getline(std::cin, line)) {
+            continue;
+        }
+
+        // line = "exec 192.168.0.17 uname -an";
 
         tokens = tokenizeString(line);
 
@@ -236,6 +241,7 @@ int serverMode(const Properties &p) {
                 std::cerr << "server: Invalid destination host" << std::endl;
                 break;
             }
+            daddr.s_addr = ntohl(daddr.s_addr);
 
             // run command
             RemoteCodeExecuter::sendCommand(&netEngine, daddr, line.substr(line.find(tokens[2])));
@@ -250,5 +256,6 @@ int serverMode(const Properties &p) {
         }
     }
 
+    std::cout << "Quitting..." << std::endl;
     return 0;
 }
