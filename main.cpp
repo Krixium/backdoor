@@ -262,6 +262,8 @@ int serverMode(const Properties &p) {
         // format: get [ip] [file]
         if (tokens[0] == "get") {
         }
+
+        sleep(1);
     }
 
     std::cout << "Quitting..." << std::endl;
