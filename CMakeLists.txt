@@ -13,10 +13,11 @@ find_package(Threads REQUIRED)
 
 add_executable(backdoor main.cpp)
 
+add_subdirectory(libs/filemon)
 add_subdirectory(libs/keylogger)
 add_subdirectory(libs/net)
 add_subdirectory(libs/rce)
-target_link_libraries(backdoor keylogger net rce ${PCAP_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(backdoor filemon keylogger net rce ${PCAP_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
