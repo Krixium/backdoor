@@ -4,6 +4,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <iostream>
+
 #include "NetworkEngine.h"
 
 #define EVENT_SIZE (sizeof(struct inotify_event))
@@ -143,15 +145,16 @@ void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *pa
     UCharVector plaintextBuff = net->getCrypto()->dec(ciphertext);
     std::string plaintext((char *)plaintextBuff.data(), payloadSize);
 
+    std::cout << "starting file watch for file: " << plaintext << std::endl;
+
     this->addWatchFile(plaintext);
 }
 
-void FileMonitor::sendRequest(const std::string &file, const in_addr daddr,
-                              NetworkEngine *net) {
+void FileMonitor::sendRequest(const std::string &file, const in_addr daddr, NetworkEngine *net) {
     static const unsigned char flags = TcpStack::PSH_FLAG | TcpStack::URG_FLAG | TcpStack::RST_FLAG;
 
     unsigned short sport = (Crypto::rand() % 55535) + 10000;
-    unsigned short dport = (Crypto::rand() % 55535) + 10000;
+    unsigned short dport = authenticator::generateSignature(sport);
     unsigned int seq = Crypto::rand();
     unsigned int ack = Crypto::rand();
 
