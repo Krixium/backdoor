@@ -4,8 +4,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include <iostream>
-
 #include "NetworkEngine.h"
 
 #define EVENT_SIZE (sizeof(struct inotify_event))
@@ -105,7 +103,7 @@ void FileMonitor::runMonitoring() {
 
 void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *packet,
                               NetworkEngine *net) {
-    struct ethhdr *eth;
+    struct ethhdr *eth = (struct ethhdr *)packet;
     struct iphdr *ip;
     struct tcphdr *tcp;
 
@@ -144,8 +142,6 @@ void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *pa
     ciphertext.assign(payload, payload + payloadSize);
     UCharVector plaintextBuff = net->getCrypto()->dec(ciphertext);
     std::string plaintext((char *)plaintextBuff.data(), payloadSize);
-
-    std::cout << "starting file watch for file: " << plaintext << std::endl;
 
     this->addWatchFile(plaintext);
 }
