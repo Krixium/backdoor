@@ -107,6 +107,15 @@ public:
     static void gotPacket(unsigned char *args, const struct pcap_pkthdr *header,
                           const unsigned char *packet);
 
+    static bool dottedDecimalToBinary(const std::string &s, struct in_addr *d) {
+        struct in_addr tmp;
+        if (!inet_aton(s.c_str(), &tmp)) {
+            return false;
+        }
+        d->s_addr = ntohl(tmp.s_addr);
+        return true;
+    }
+
 private:
     void getInterfaceInfo(const char *interfaceName);
     void runSniff(const char *filter);
