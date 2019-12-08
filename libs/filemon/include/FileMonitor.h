@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -23,8 +24,11 @@ private:
     bool running;
 
     int inotifyFd;
-    std::unordered_map<std::string, int> wds;
-    std::unordered_map<int, std::vector<unsigned int>> destinations;
+
+    std::unordered_map<int, std::set<unsigned int>> destinations;
+    std::unordered_map<int, std::string> wdToPathLookup;
+    std::unordered_map<unsigned int, std::vector<std::pair<int, std::string>>> hostToFileLookup;
+
     EventCallback createdCallback;
     EventCallback modifiedCallback;
     EventCallback deletedCallback;
@@ -34,9 +38,22 @@ public:
 
     ~FileMonitor();
 
-    inline const std::vector<unsigned int> &getDestinations(const int wd) {
+    inline const std::set<unsigned int> &getDestinations(const int wd) {
         return this->destinations.at(wd);
     };
+
+    inline const std::vector<std::string> getFullPathsForHost(const unsigned int host, const int wd) {
+        auto pairs = this->hostToFileLookup.at(host);
+        std::vector<std::string> results;
+
+        for (auto p : pairs) {
+            if (p.first == wd) {
+                results.push_back(this->wdToPathLookup.at(wd) + p.second);
+            }
+        }
+
+        return results;
+    }
 
     inline void setCreatedCallback(EventCallback &cb) { this->createdCallback = std::move(cb); }
 
@@ -72,6 +89,8 @@ public:
     void netCallback(const pcap_pkthdr *header, const unsigned char *packet, NetworkEngine *net);
 
     static void sendRequest(const std::string &file, const in_addr daddr, NetworkEngine *net);
+
+    static std::pair<std::string, std::string> splitPath(std::string &fullPath);
 
 private:
     void runMonitoring();

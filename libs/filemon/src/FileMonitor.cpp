@@ -40,8 +40,8 @@ FileMonitor::FileMonitor(EventCallback &created, EventCallback &modified, EventC
 FileMonitor::~FileMonitor() {
     this->stopMonitoring();
 
-    for (auto &pair : wds) {
-        inotify_rm_watch(this->inotifyFd, pair.second);
+    for (auto &p : destinations) {
+        inotify_rm_watch(this->inotifyFd, p.first);
     }
 
     close(this->inotifyFd);
@@ -61,13 +61,8 @@ int FileMonitor::addWatchFile(const std::string &filename) {
     static const int flags = (unsigned int)(IN_CREATE | IN_MODIFY | IN_DELETE);
 
     std::lock_guard<std::mutex> guard(this->lock);
-    int wd = inotify_add_watch(this->inotifyFd, filename.c_str(), flags);
 
-    if (wd >= 0) {
-        this->wds[filename] = wd;
-    }
-
-    return wd;
+    return inotify_add_watch(this->inotifyFd, filename.c_str(), flags);
 }
 
 /*
@@ -184,12 +179,17 @@ void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *pa
     UCharVector plaintextBuff = net->getCrypto()->dec(ciphertext);
     std::string plaintext((char *)plaintextBuff.data(), payloadSize);
 
-    // start watching
-    int wd = this->addWatchFile(plaintext);
+    auto splitPathPair = FileMonitor::splitPath(plaintext);
 
-    // save the destination if its good
+    // start watching
+    int wd = this->addWatchFile(splitPathPair.first);
+
+    // save the destination and the file that the host is interested in at that destination
     if (wd > 0) {
-        this->destinations[wd].push_back(ntohl(ip->saddr));
+        unsigned int host = ntohl(ip->saddr);
+        this->destinations[wd].insert(host);
+        this->wdToPathLookup[wd] = splitPathPair.first;
+        this->hostToFileLookup[host].push_back({wd, splitPathPair.second});
     }
 }
 
@@ -216,4 +216,30 @@ void FileMonitor::sendRequest(const std::string &file, const in_addr daddr, Netw
     UCharVector ciphertext = net->getCrypto()->enc(plaintext);
 
     net->sendRawTcp(*net->getIp(), daddr, sport, dport, seq, ack, flags, ciphertext);
+}
+
+/*
+ * Splits a full path into file location and file name.
+ *
+ * E.g. /example/foo/bar.txt becomes /example/foo/ and bar.txt.
+ *
+ * Params:
+ *      std::string& fullPath: The full path to split.
+ *
+ * Returns:
+ *      A pair of strings. The first string in the pair is the directory path and the second string
+ *      is the filename.
+ */
+std::pair<std::string, std::string> FileMonitor::splitPath(std::string &fullPath) {
+    int i;
+    for (i = fullPath.length() - 1; i >= 0; i--) {
+        if (fullPath[i] == '/') {
+            break;
+        }
+    }
+
+    std::string pathStr(fullPath, 0, i + 1);
+    std::string fileStr(fullPath, i + 1, fullPath.size() - i - 1);
+
+    return std::make_pair(pathStr, fileStr);
 }
