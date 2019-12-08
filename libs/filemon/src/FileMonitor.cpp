@@ -51,13 +51,13 @@ FileMonitor::~FileMonitor() {
  * Adds a file to the inotify watch system.
  *
  * Params:
- *      const std::string &path: The absolute path to watch.
+ *      const std::string &filename: The absolute path to watch.
  *
  * Returns:
  *      The watch file descriptor returned by inotify if monitoring started successfully, 0 or a
  *      negative number otherwise.
  */
-int FileMonitor::addWatchFile(const std::string &path) {
+int FileMonitor::addWatchFile(const std::string &filename) {
     static const int flags = (unsigned int)(IN_CREATE | IN_MODIFY | IN_DELETE);
 
     std::lock_guard<std::mutex> guard(this->lock);
