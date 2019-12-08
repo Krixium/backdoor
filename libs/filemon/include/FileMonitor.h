@@ -44,7 +44,7 @@ public:
 
     inline void setDeletedCallback(EventCallback &cb) { this->deletedCallback = std::move(cb); }
 
-    int addWatchFile(const std::string &filename);
+    int addWatchFile(const std::string &path);
 
     inline void startMonitoring() {
         this->stopMonitoring();

