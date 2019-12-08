@@ -17,7 +17,6 @@
     ./backdoor [client|server|test]
         client - client mode a.k.a victim mode
         server - server mode a.k.a command center mode
-        test - testing mode
 
 ## Server Mode Commands
     quit

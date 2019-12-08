@@ -55,11 +55,11 @@ public:
         return results;
     }
 
-    inline void setCreatedCallback(EventCallback &cb) { this->createdCallback = std::move(cb); }
+    inline void setCreatedCallback(EventCallback &cb) { this->createdCallback = cb; }
 
-    inline void setModifiedCallback(EventCallback &cb) { this->modifiedCallback = std::move(cb); }
+    inline void setModifiedCallback(EventCallback &cb) { this->modifiedCallback = cb; }
 
-    inline void setDeletedCallback(EventCallback &cb) { this->deletedCallback = std::move(cb); }
+    inline void setDeletedCallback(EventCallback &cb) { this->deletedCallback = cb; }
 
     int addWatchFile(const std::string &path);
 
