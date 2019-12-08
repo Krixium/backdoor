@@ -30,8 +30,9 @@ FileMonitor::~FileMonitor() {
 }
 
 bool FileMonitor::addWatchFile(const std::string &filename) {
-    std::lock_guard<std::mutex> guard(this->lock);
     static const int flags = (unsigned int)(IN_CREATE | IN_MODIFY | IN_DELETE);
+
+    std::lock_guard<std::mutex> guard(this->lock);
     int wd = inotify_add_watch(this->inotifyFd, filename.c_str(), flags);
 
     if (wd < 0) {
