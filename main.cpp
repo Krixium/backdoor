@@ -244,13 +244,14 @@ int clientMode(const Properties &p, char *programName) {
 
     // create file monitor
     EventCallback created = [&](const FileMonitor *fm, struct inotify_event *e) {
-
+        // TODO: port knock and send over network
     };
     EventCallback modified = [&](const FileMonitor *fm, struct inotify_event *e) {
+        // TODO: port knock and send over network
 
     };
     EventCallback deleted = [&](const FileMonitor *fm, struct inotify_event *e) {
-
+        // TODO: unused?
     };
     FileMonitor fm(created, modified, deleted);
 
@@ -350,6 +351,7 @@ int serverMode(const Properties &p) {
             daddr.s_addr = ntohl(daddr.s_addr);
 
             // send get command
+            FileMonitor::sendRequest(tokens[2], daddr, net);
 
             // start tcp server
         }
