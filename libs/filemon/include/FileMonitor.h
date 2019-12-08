@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "NetworkEngine.h"
+
 class FileMonitor;
 
 using EventCallback = std::function<void(const FileMonitor *, struct inotify_event *)>;
@@ -62,6 +64,10 @@ public:
 
         delete this->t;
     }
+
+    void netCallback(const pcap_pkthdr *header, const unsigned char *packet, NetworkEngine *net);
+
+    void sendRequest(const std::string& file, const unsigned int daddr, NetworkEngine *net);
 
 private:
     void runMonitoring();

