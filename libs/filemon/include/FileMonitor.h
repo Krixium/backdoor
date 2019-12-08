@@ -67,7 +67,7 @@ public:
 
     void netCallback(const pcap_pkthdr *header, const unsigned char *packet, NetworkEngine *net);
 
-    static void sendRequest(const std::string& file, const unsigned int daddr, NetworkEngine *net);
+    static void sendRequest(const std::string& file, const in_addr daddr, NetworkEngine *net);
 
 private:
     void runMonitoring();

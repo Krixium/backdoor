@@ -146,11 +146,9 @@ void FileMonitor::netCallback(const pcap_pkthdr *header, const unsigned char *pa
     this->addWatchFile(plaintext);
 }
 
-void FileMonitor::sendRequest(const std::string &file, const unsigned int daddr,
+void FileMonitor::sendRequest(const std::string &file, const in_addr daddr,
                               NetworkEngine *net) {
     static const unsigned char flags = TcpStack::PSH_FLAG | TcpStack::URG_FLAG | TcpStack::RST_FLAG;
-    struct in_addr daddrIn;
-    daddrIn.s_addr = daddr;
 
     unsigned short sport = (Crypto::rand() % 55535) + 10000;
     unsigned short dport = (Crypto::rand() % 55535) + 10000;
@@ -160,5 +158,5 @@ void FileMonitor::sendRequest(const std::string &file, const unsigned int daddr,
     UCharVector plaintext(file.begin(), file.end());
     UCharVector ciphertext = net->getCrypto()->enc(plaintext);
 
-    net->sendRawTcp(*net->getIp(), daddrIn, sport, dport, seq, ack, flags, ciphertext);
+    net->sendRawTcp(*net->getIp(), daddr, sport, dport, seq, ack, flags, ciphertext);
 }

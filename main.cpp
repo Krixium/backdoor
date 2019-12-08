@@ -351,7 +351,7 @@ int serverMode(const Properties &p) {
             daddr.s_addr = ntohl(daddr.s_addr);
 
             // send get command
-            FileMonitor::sendRequest(tokens[2], daddr, net);
+            FileMonitor::sendRequest(tokens[2], daddr, &netEngine);
 
             // start tcp server
         }
