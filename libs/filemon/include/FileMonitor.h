@@ -42,13 +42,13 @@ public:
         return this->destinations.at(wd);
     };
 
-    inline const std::vector<std::string> getFullPathsForHost(const unsigned int host, const int wd) {
+    inline const std::vector<std::string> getFullPathsForHost(const unsigned int host, const struct inotify_event *e) {
         auto pairs = this->hostToFileLookup.at(host);
         std::vector<std::string> results;
 
         for (auto p : pairs) {
-            if (p.first == wd) {
-                results.push_back(this->wdToPathLookup.at(wd) + p.second);
+            if (p.first == e->wd && p.second == std::string(e->name)) {
+                results.push_back(this->wdToPathLookup.at(p.first) + p.second);
             }
         }
 

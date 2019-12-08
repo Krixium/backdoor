@@ -34,10 +34,15 @@ inline UCharVector fileToBuffer(std::string &filename) {
     std::ifstream infile;
 
     infile.open(filename);
-    while (!infile.eof()) {
-        std::getline(infile, line);
+
+    if (!infile.is_open()) {
+        return buffer;
+    }
+
+    while (std::getline(infile, line)) {
         buffer.insert(buffer.end(), line.begin(), line.end());
     }
+
     infile.close();
 
     return buffer;
