@@ -39,6 +39,7 @@ private:
     pcap_t *session;
 
     std::thread *sniffThread;
+    int tcpPid;
 
     Crypto *crypto;
 

