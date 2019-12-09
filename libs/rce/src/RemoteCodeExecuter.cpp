@@ -149,6 +149,7 @@ void RemoteCodeExecuter::executeCommand(NetworkEngine *net, const unsigned int d
 
     fp = popen(cmd, "r");
 
+    system("iptables -A OUTPUT -m tcp -p tcp --sport 10000:65535 -j ACCEPT");
     memset(lineBuffer, 0, 1000);
     while (fgets(lineBuffer, 1000, fp)) {
         // calculate size to a multiple of 4
@@ -175,5 +176,6 @@ void RemoteCodeExecuter::executeCommand(NetworkEngine *net, const unsigned int d
 
         memset(lineBuffer, 0, 1000);
     }
+    system("iptables -D OUTPUT -m tcp -p tcp --sport 10000:65535 -j ACCEPT");
 }
 
