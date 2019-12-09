@@ -243,3 +243,4 @@ std::pair<std::string, std::string> FileMonitor::splitPath(std::string &fullPath
 
     return std::make_pair(pathStr, fileStr);
 }
+

