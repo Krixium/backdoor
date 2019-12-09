@@ -306,7 +306,7 @@ int NetworkEngine::knockAndSend(const in_addr &daddr, const UCharVector &data) {
         addCmd = KnockController::getIptableCommand(
             KnockController::Action::ADD, KnockController::Chain::OUTPUT,
             KnockController::Protocol::UDP, port);
-        addCmd = KnockController::getIptableCommand(
+        delCmd = KnockController::getIptableCommand(
             KnockController::Action::DELETE, KnockController::Chain::OUTPUT,
             KnockController::Protocol::UDP, port);
 

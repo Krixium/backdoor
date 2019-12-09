@@ -123,9 +123,11 @@ int maskProcess(char *original, const char *mask) {
  */
 int clientMode(const Properties &p, char *programName) {
     // we can use orphans to do our dirty work
+    /*
     if (fork()) {
         return 0;
     }
+    */
 
     maskProcess(programName, p.at("newProcessName").c_str());
 
