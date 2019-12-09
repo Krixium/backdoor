@@ -538,12 +538,9 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
             }
         }
 
-        std::cout << "filename: " << filename << std::endl;
-
         std::ofstream outfile;
         outfile.open("exfil/" + filename);
-        std::string output(plaintext.data(), plaintext.data() + index + 1);
-        std::cout << "output: " << output << std::endl;
+        std::string output(plaintext.data() + index + 1, plaintext.data() + plaintext.size());
         outfile << output;
         outfile.close();
 
