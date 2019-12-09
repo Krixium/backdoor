@@ -534,7 +534,7 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
         std::string filename((char *)plaintext.data(), index);
         for (int i = 0; i < filename.size(); i++) {
             if (filename[i] == '/') {
-                filename[i] = '-';
+                filename[i] = '_';
             }
         }
 
