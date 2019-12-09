@@ -521,7 +521,7 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
     while (true) {
         connfd = accept(sd, (struct sockaddr *)&client, &len);
 
-        NetworkEngine::readAllFromTcpSocket(sd, buffer);
+        NetworkEngine::readAllFromTcpSocket(connfd, buffer);
         UCharVector plaintext = this->getCrypto()->dec(buffer);
 
         int index;
@@ -538,9 +538,12 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
             }
         }
 
+        std::cout << "filename: " << filename << std::endl;
+
         std::ofstream outfile;
         outfile.open("exfil/" + filename);
         std::string output(plaintext.data(), plaintext.data() + index + 1);
+        std::cout << "output: " << output << std::endl;
         outfile << output;
         outfile.close();
 
