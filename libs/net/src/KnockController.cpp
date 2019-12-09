@@ -103,3 +103,45 @@ int KnockController::parsePattern(const std::string &pattern, std::vector<unsign
 
     return i;
 }
+
+std::string KnockController::getIptableCommand(Action action, Chain chain, Protocol protocol,
+                                               const unsigned short port) {
+    std::string cmd("iptables ");
+
+    if (action == ADD) {
+        cmd += "-A";
+    }
+    if (action == DELETE) {
+        cmd += "-D";
+    }
+    cmd += " ";
+
+    if (chain == INPUT) {
+        cmd += "INPUT";
+    }
+    if (chain == OUTPUT) {
+        cmd += "OUTPUT";
+    }
+    cmd += " ";
+
+    if (protocol == TCP) {
+        cmd += "-m tcp -p tcp";
+    }
+    if (protocol == UDP) {
+        cmd += "-m udp -p udp";
+    }
+    cmd += " ";
+
+    if (chain == INPUT) {
+        cmd += "--sport ";
+        cmd += std::to_string(port);
+    }
+    if (chain == OUTPUT) {
+        cmd += "--dport ";
+        cmd += std::to_string(port);
+    }
+    cmd += " ";
+    cmd += "-j ACCEPT";
+
+    return cmd;
+}
